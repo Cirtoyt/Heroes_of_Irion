@@ -8,12 +8,12 @@ public class SquadMember : MonoBehaviour
 {
     public enum Classes
     {
-        SWORDSMAN,
-        TANK,
-        ROGUE,
-        ARCHER,
-        HEALER,
-        SORCERER,
+        Swordsman,
+        Tank,
+        Rogue,
+        Archer,
+        Healer,
+        Sorcerer,
     }
 
     public enum States
@@ -285,9 +285,9 @@ public class SquadMember : MonoBehaviour
     {
         switch (squadMemberClass)
         {
-            case Classes.TANK:
-            case Classes.SWORDSMAN:
-            case Classes.ROGUE:
+            case Classes.Tank:
+            case Classes.Swordsman:
+            case Classes.Rogue:
                 //Vector3 lookDir = (closestEnemyFound.position - transform.position).normalized;
                 Vector3 meleePos = closestEnemyFound.position; // + (lookDir * -enemyEngagePosPadding);
                 return meleePos;
@@ -408,7 +408,7 @@ public class SquadMember : MonoBehaviour
     {
         switch (squadMemberClass)
         {
-            case Classes.SWORDSMAN:
+            case Classes.Swordsman:
                 {
                     float attackDelay = 1.6f;
                     float attackDamage = 7;
@@ -423,7 +423,7 @@ public class SquadMember : MonoBehaviour
                     yield return new WaitForSeconds(attackDelay);
                     break;
                 }
-            case Classes.TANK:
+            case Classes.Tank:
                 {
                     float attackDelay = 2.2f;
                     float attackDamage = 7;
@@ -438,7 +438,7 @@ public class SquadMember : MonoBehaviour
                     yield return new WaitForSeconds(attackDelay);
                     break;
                 }
-            case Classes.ARCHER:
+            case Classes.Archer:
                 {
                     float attackTime = 0.3f;
                     float attackDelay = 2.5f;
@@ -457,7 +457,7 @@ public class SquadMember : MonoBehaviour
                     yield return new WaitForSeconds(attackDelay);
                     break;
                 }
-            case Classes.ROGUE:
+            case Classes.Rogue:
                 {
                     float attackDelay = 0.8f;
                     float attackDamage = 4;
@@ -482,7 +482,7 @@ public class SquadMember : MonoBehaviour
                     yield return new WaitForSeconds(attackDelay);
                     break;
                 }
-            case Classes.SORCERER:
+            case Classes.Sorcerer:
                 {
                     float attackTime = 0.5f;
                     float attackDelay = 3.1f;
@@ -502,7 +502,7 @@ public class SquadMember : MonoBehaviour
                     yield return new WaitForSeconds(attackDelay);
                     break;
                 }
-            case Classes.HEALER:
+            case Classes.Healer:
                 {
                     float healTime = 0.5f;
                     float healDelay = 3.9f;

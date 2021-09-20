@@ -66,20 +66,15 @@ public class Player : MonoBehaviour
     {
         PivotCamera();
         UpdateAnimator();
+    }
 
-        if (selectingTarget)
+    private void LateUpdate()
+    {
+        // Triggering enemy outline
+        if (selectingTarget && Physics.SphereCast(transform.position, interactHalfWidth, transform.forward, out RaycastHit hit, attackHighlightRange, enemyLayer))
         {
-            if (Physics.SphereCast(transform.position, interactHalfWidth, transform.forward,
-                               out RaycastHit hit, attackHighlightRange, enemyLayer))
-            {
-                highlightedEnemy = hit.transform;
-                highlightedEnemy.GetComponent<Outline>().enabled = true;
-            }
-            else
-            {
-                highlightedEnemy.GetComponent<Outline>().enabled = false;
-                highlightedEnemy = null;
-            }
+            hit.transform.GetComponent<Outline>().enabled = true;
+            hit.transform.GetComponent<OutlineCanceler>().enabled = true;
         }
     }
 
@@ -232,10 +227,6 @@ public class Player : MonoBehaviour
             {
                 Debug.Log("No enemy found to attack");
             }
-
-            // Deselect highlight
-            highlightedEnemy.GetComponent<Outline>().enabled = false;
-            highlightedEnemy = null;
 
             selectingTarget = false;
         }
