@@ -11,6 +11,7 @@ public class Enemy : MonoBehaviour
         LARGE,
     }
 
+    [SerializeField] private int baseID;
     [SerializeField] private float maxHealth;
     [SerializeField] private EnemyType type;
     [SerializeField] private float sightRange;
@@ -23,6 +24,8 @@ public class Enemy : MonoBehaviour
     [SerializeField] private Animator anim;
     [SerializeField] private bool showDebugGizmos;
     [SerializeField] private GameObject healthBar;
+    [SerializeField] private MeshRenderer baseIDShaderEffect;
+    [SerializeField] private List<Material> baseIDShaderMats;
 
     private NavMeshAgent agent;
     private NavMeshObstacle obstacle;
@@ -47,6 +50,8 @@ public class Enemy : MonoBehaviour
         obstacle.enabled = true;
 
         health = maxHealth;
+
+        baseIDShaderEffect.material = baseIDShaderMats[baseID - 1];
     }
     
     void Update()
@@ -214,12 +219,18 @@ public class Enemy : MonoBehaviour
 
     private void DestroyEnemy()
     {
+        EnemyBaseManager.Instance.UpdateRecords(baseID);
         Destroy(gameObject);
     }
 
     public EnemyType GetEnemyType()
     {
         return type;
+    }
+
+    public int GetBaseID()
+    {
+        return baseID;
     }
 
     private void DrawCircle(Vector3 center, float radius, Color color)
