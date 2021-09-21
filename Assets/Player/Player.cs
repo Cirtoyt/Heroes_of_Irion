@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class Player : MonoBehaviour
 {
@@ -17,7 +18,7 @@ public class Player : MonoBehaviour
     [SerializeField] private Transform meshTrans;
     [SerializeField] private float attackDelay;
     [SerializeField] private float weaponDamage;
-    [SerializeField] private GameObject healthBar;
+    [SerializeField] private Image healthBar;
     [Header("Camera")]
     [SerializeField] private Transform cameraArm;
     [SerializeField] private Transform cameraFocus;
@@ -345,6 +346,7 @@ public class Player : MonoBehaviour
         squadBelt.UpdateFormationPositions();
         _member.SwitchState(SquadMember.States.CASUALFOLLOWING);
         partyHUD.UpdateHUD(partyMngr.GetPositionInParty(_member.squadMemberUID));
+        // Disable healthbar
 
         SquadMember[] members = FindObjectsOfType<SquadMember>();
         foreach (SquadMember member in members)
@@ -395,7 +397,7 @@ public class Player : MonoBehaviour
     public void TakeDamage(float _Damage)
     {
         health -= _Damage;
-        healthBar.GetComponent<HealthBar>().UpdateBarUI(health, maxHealth);
+        StartCoroutine(partyHUD.SmoothBarUI(healthBar, health, maxHealth));
 
         if (health <= 0)
         {
@@ -406,7 +408,7 @@ public class Player : MonoBehaviour
     public void HealHealth(float _amount)
     {
         health += _amount;
-        healthBar.GetComponent<HealthBar>().UpdateBarUI(health, maxHealth);
+        StartCoroutine(partyHUD.SmoothBarUI(healthBar, health, maxHealth));
 
         // Play healing particle effect
 

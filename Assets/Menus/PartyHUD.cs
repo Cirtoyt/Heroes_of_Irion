@@ -20,6 +20,9 @@ public class PartyHUD : MonoBehaviour
         {
             HUD.SetActive(false);
         }
+
+        // begin game:
+        partyMemberHUDS[0].SetActive(true);
     }
     
     void Update()
@@ -33,18 +36,18 @@ public class PartyHUD : MonoBehaviour
         if (partyManager.partyMembers.Count > partyPosition)
         {
             // Enable HUD element on-screen
-            partyMemberHUDS[partyPosition - 1].SetActive(true);
+            partyMemberHUDS[partyPosition].SetActive(true);
 
             // Get squad member at party position
             SquadMember member = partyManager.GetSquadMemberFromPositionInParty(partyPosition);
 
             // Set avatar
-            Image avatar = partyMemberHUDS[partyPosition - 1].transform.Find("Avatar Image").GetComponent<Image>();
-            avatar.sprite = avatars[member.squadMemberUID - 1];
+            Image avatar = partyMemberHUDS[partyPosition].transform.Find("Avatar Image").GetComponent<Image>();
+            avatar.sprite = avatars[member.squadMemberUID];
             avatar.color = new Color(1, 1, 1, 1);
 
             // Set text
-            Text nameplate = partyMemberHUDS[partyPosition - 1].transform.Find("Nameplate Text").GetComponent<Text>();
+            Text nameplate = partyMemberHUDS[partyPosition].transform.Find("Nameplate Text").GetComponent<Text>();
             nameplate.text = member.gameObject.name + " The " + member.squadMemberClass.ToString();
 
             // Set health bar
@@ -52,7 +55,7 @@ public class PartyHUD : MonoBehaviour
         }
         else
         {
-            partyMemberHUDS[partyPosition - 1].SetActive(false);
+            partyMemberHUDS[partyPosition].SetActive(false);
         }
     }
 
@@ -61,13 +64,13 @@ public class PartyHUD : MonoBehaviour
         if (partyManager.partyMembers.Contains(partyManager.GetUIDFromPositionInParty(partyPosition)))
         {
             // Updates health bar slider for correct party members
-            Image healthBar = partyMemberHUDS[partyPosition - 1].transform.Find("Health Fill").GetComponent<Image>();
+            Image healthBar = partyMemberHUDS[partyPosition].transform.Find("Health Fill").GetComponent<Image>();
 
             StartCoroutine(SmoothBarUI(healthBar, newHealth, maxHealth));
         }
     }
 
-    private IEnumerator SmoothBarUI(Image healthBar, float _newHealth, float _maxHealth)
+    public IEnumerator SmoothBarUI(Image healthBar, float _newHealth, float _maxHealth)
     {
         float newPercentage = _newHealth / _maxHealth;
         float preChangePercent = healthBar.fillAmount;

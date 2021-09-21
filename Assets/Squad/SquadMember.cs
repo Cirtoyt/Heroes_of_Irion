@@ -588,7 +588,6 @@ public class SquadMember : MonoBehaviour
     public void TakeDamage(float _damage)
     {
         health -= _damage;
-        //healthBar.GetComponent<HealthBar>().UpdateBarUI(health, maxHealth);
         partyHUD.SetHealthBar(partyPosition, health, maxHealth);
 
         if (health <= 0)
@@ -621,7 +620,6 @@ public class SquadMember : MonoBehaviour
     public void HealHealth(float _amount)
     {
         health += _amount;
-        //healthBar.GetComponent<HealthBar>().UpdateBarUI(health, maxHealth);
         partyHUD.SetHealthBar(partyPosition, health, maxHealth);
 
         // Play healing particle effect
