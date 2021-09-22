@@ -79,10 +79,18 @@ public class ActionMenu : MonoBehaviour
                 if (anyMembersInCombat && optionScript.GetActionType() == Actions.REMOVEFROMPARTY)
                 {
                     optionScript.Dim();
+                    if (lastSelectedAction == Actions.REMOVEFROMPARTY)
+                    {
+                        lastSelectedAction = Actions.NONE;
+                    }
                 }
                 else if (!anyMembersInCombat && optionScript.GetActionType() == Actions.REGROUP)
                 {
                     optionScript.Dim();
+                    if (lastSelectedAction == Actions.REGROUP)
+                    {
+                        lastSelectedAction = Actions.NONE;
+                    }
                 }
                 else
                 {

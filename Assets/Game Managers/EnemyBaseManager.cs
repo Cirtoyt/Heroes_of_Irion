@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class EnemyBaseManager : MonoBehaviour
 {
@@ -20,9 +21,24 @@ public class EnemyBaseManager : MonoBehaviour
         }
     }
 
+    [Header("Variables")]
+    [SerializeField] private Text totalDefeatedBasesText;
+    [SerializeField] private List<Text> upgradeSlots;
+    [SerializeField] private List<Reward> baseRewards;
     [Header("Debug")]
     [SerializeField] private List<uint> baseEnemyTotals;
     [SerializeField] private List<bool> defeatedBases;
+    [SerializeField] private List<Reward> currentUpgrades;
+
+    private enum Reward
+    {
+        Gabriel,
+        Kate,
+        SharpenedBlades,
+        MagicEye,
+        OrbOfProtection,
+        BootsOfSwiftness,
+    }
 
     void Start()
     {
@@ -36,6 +52,14 @@ public class EnemyBaseManager : MonoBehaviour
                 baseEnemyTotals[enemy.GetBaseID() - 1]++;
             }
         }
+
+        // Reset upgrade text slots to empty
+        totalDefeatedBasesText.text = "0 / " + baseEnemyTotals.Count;
+        foreach (var slot in upgradeSlots)
+        {
+            slot.text = "";
+        }
+        upgradeSlots[0].text = "None";
     }
 
     // Called everytime an enemy is killed
@@ -54,6 +78,26 @@ public class EnemyBaseManager : MonoBehaviour
         if (baseEnemyTotals[baseID - 1] <= 0)
         {
             defeatedBases[baseID - 1] = true;
+            currentUpgrades.Add(baseRewards[baseID - 1]);
+            
+            // Update UI
+            int totalBasesDefeated = 0;
+            foreach (bool state in defeatedBases)
+            {
+                if (state == true)
+                {
+                    totalBasesDefeated++;
+                }
+            }
+            totalDefeatedBasesText.text = totalBasesDefeated.ToString() + " / " + baseEnemyTotals.Count;
+
+            if (currentUpgrades.Count < baseEnemyTotals.Count)
+            {
+                for (int slot = 0; slot < currentUpgrades.Count; slot++)
+                {
+                    upgradeSlots[slot].text = currentUpgrades[slot].ToString();
+                }
+            }
         }
 
         // check for end-game state where all bases are defeated

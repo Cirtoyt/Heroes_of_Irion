@@ -335,6 +335,7 @@ public class Player : MonoBehaviour
             {
                 member.SwitchState(SquadMember.States.IDLE);
                 member.StepBack();
+                member.gameObject.tag = "Untagged";
                 Debug.Log(member.name + " has been removed from the party");
             }
         }
@@ -346,7 +347,7 @@ public class Player : MonoBehaviour
         squadBelt.UpdateFormationPositions();
         _member.SwitchState(SquadMember.States.CASUALFOLLOWING);
         partyHUD.UpdateHUD(partyMngr.GetPositionInParty(_member.squadMemberUID));
-        // Disable healthbar
+        _member.gameObject.tag = "In Party";
 
         SquadMember[] members = FindObjectsOfType<SquadMember>();
         foreach (SquadMember member in members)

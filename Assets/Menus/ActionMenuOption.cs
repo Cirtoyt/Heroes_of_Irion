@@ -10,6 +10,7 @@ public enum Actions
     TAKECOVER,
     REGROUP,
     STATS,
+    NONE,
 }
 
 public class ActionMenuOption : MonoBehaviour

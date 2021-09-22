@@ -28,15 +28,6 @@ public class SquadMember : MonoBehaviour
     public int squadMemberUID;
     public Classes squadMemberClass;
 
-    private Rigidbody rb;
-    private NavMeshAgent agent;
-    private NavMeshObstacle obstacle;
-    private SquadBelt squadBelt;
-    private Transform player;
-    private Player playerScript;
-    private PartyManager partyMngr;
-    private PartyHUD partyHUD;
-
     [SerializeField] private States state;
     [SerializeField] private float maxHealth;
     [SerializeField] private float pathingSearchRate;
@@ -49,6 +40,16 @@ public class SquadMember : MonoBehaviour
     [SerializeField] private bool showDubugGizmos;
     [SerializeField] private GameObject healthBar;
 
+    private Rigidbody rb;
+    private NavMeshAgent agent;
+    private NavMeshObstacle obstacle;
+    private SquadBelt squadBelt;
+    private Transform player;
+    private Player playerScript;
+    private PartyManager partyMngr;
+    private PartyHUD partyHUD;
+    private SphereCollider safeHavenBorder;
+
     private Vector3 followPoint;
     private bool isFollowing;
     [SerializeField] private int partyPosition;
@@ -56,9 +57,10 @@ public class SquadMember : MonoBehaviour
     private Vector3 engagePos;
     private bool canAttack;
     private float health;
-    private bool canEngageCombat = true;
+    private bool canEngageCombat;
     private States preCombatState;
-    private int lastAttack = 0;
+    private int lastAttack;
+    private bool regrouping;
 
     void Awake()
     {
@@ -70,13 +72,18 @@ public class SquadMember : MonoBehaviour
         playerScript = player.GetComponent<Player>();
         partyMngr = FindObjectOfType<PartyManager>();
         partyHUD = FindObjectOfType<PartyHUD>();
+        safeHavenBorder = GameObject.FindGameObjectWithTag("Safe Haven").GetComponent<SphereCollider>();
 
         followPoint = Vector3.zero;
         isFollowing = false;
         engagePos = Vector3.zero;
         canAttack = true;
+        canEngageCombat = true;
         preCombatState = state;
-        
+        lastAttack = 0;
+        regrouping = false;
+
+
         UpdatePartyPositionVar();
         agent.enabled = false;
         obstacle.enabled = true;
@@ -298,33 +305,42 @@ public class SquadMember : MonoBehaviour
 
     private void CheckForEnemyPresence()
     {
-        Collider[] enemies = Physics.OverlapSphere(transform.position, enemyCheckRadius, enemyLayer);
-
-        if (enemies.Length > 0)
+        if (Vector3.Distance(transform.position, safeHavenBorder.transform.position) > safeHavenBorder.radius
+            && tag == "In Party")
         {
-            float minDist = Mathf.Infinity;
-            foreach (Collider enemy in enemies)
-            {
-                float dist = Vector3.Distance(enemy.transform.position, transform.position);
-                if (dist < minDist)
-                {
-                    minDist = dist;
-                    closestEnemyFound = enemy.transform;
-                }
-            }
+            Collider[] enemies = Physics.OverlapSphere(transform.position, enemyCheckRadius, enemyLayer);
 
-            float minLargeDist = Mathf.Infinity;
-            foreach (Collider enemy in enemies)
+            if (enemies.Length > 0)
             {
-                if (enemy.GetComponent<Enemy>().GetEnemyType() == Enemy.EnemyType.LARGE)
+                float minDist = Mathf.Infinity;
+                foreach (Collider enemy in enemies)
                 {
                     float dist = Vector3.Distance(enemy.transform.position, transform.position);
-                    if (dist < minLargeDist)
+                    if (dist < minDist)
                     {
-                        minLargeDist = dist;
+                        minDist = dist;
                         closestEnemyFound = enemy.transform;
                     }
                 }
+
+                // Go through list of enemies again, then prioritise the closest large enemy instead, ignorning regular if large is present
+                /*float minLargeDist = Mathf.Infinity;
+                foreach (Collider enemy in enemies)
+                {
+                    if (enemy.GetComponent<Enemy>().GetEnemyType() == Enemy.EnemyType.LARGE)
+                    {
+                        float dist = Vector3.Distance(enemy.transform.position, transform.position);
+                        if (dist < minLargeDist)
+                        {
+                            minLargeDist = dist;
+                            closestEnemyFound = enemy.transform;
+                        }
+                    }
+                }*/
+            }
+            else
+            {
+                closestEnemyFound = null;
             }
         }
         else
@@ -383,6 +399,12 @@ public class SquadMember : MonoBehaviour
         isFollowing = false;
         canEngageCombat = true;
         anim.SetBool("isRunning", false);
+
+        if (regrouping)
+        {
+            regrouping = false;
+            BeginSearchingForEnemies();
+        }
     }
 
     private void StopFollowingButKeepAgentOn()
@@ -576,6 +598,8 @@ public class SquadMember : MonoBehaviour
         {
             SwitchState(States.CASUALFOLLOWING);
             canEngageCombat = false;
+            regrouping = true;
+            closestEnemyFound = null;
 
             Debug.Log(name + " is now regrouping");
         }

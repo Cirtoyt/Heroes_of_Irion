@@ -29,6 +29,7 @@ public class Enemy : MonoBehaviour
 
     private NavMeshAgent agent;
     private NavMeshObstacle obstacle;
+    private SphereCollider safeHavenBorder;
 
     private bool targetInSightRange;
     private Vector3 nextPatrolPoint;
@@ -45,13 +46,17 @@ public class Enemy : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         obstacle = GetComponent<NavMeshObstacle>();
+        safeHavenBorder = GameObject.FindGameObjectWithTag("Safe Haven").GetComponent<SphereCollider>();
 
         agent.enabled = false;
         obstacle.enabled = true;
 
         health = maxHealth;
 
-        baseIDShaderEffect.material = baseIDShaderMats[baseID - 1];
+        if (baseID > 0)
+        {
+            baseIDShaderEffect.material = baseIDShaderMats[baseID - 1];
+        }
     }
     
     void Update()
@@ -71,23 +76,35 @@ public class Enemy : MonoBehaviour
         }
 
         if (!targetInSightRange && !targetInAttackRange) Patrol();
-        if (targetInSightRange && !targetInAttackRange) ChasePlayer();
-        if (targetInSightRange && targetInAttackRange) AttackPlayer();
+        else if (targetInSightRange && !targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target.transform)) ChasePlayer();
+        else if (targetInSightRange && targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target.transform)) AttackPlayer();
+        else Patrol();
     }
 
     private void GetClosestEnemy()
     {
         Collider[] results = Physics.OverlapSphere(transform.position, sightRange, targetLayers);
-        
+
         float shortest = Mathf.Infinity;
         foreach (var result in results)
         {
-            if ((result.transform.position - transform.position).sqrMagnitude < shortest)
+            if ((result.transform.position - transform.position).sqrMagnitude < shortest
+                && TargetIsOutsideSafeHavenAndInParty(result.transform))
             {
                 target = result.transform;
                 shortest = (result.transform.position - transform.position).sqrMagnitude;
             }
         }
+    }
+
+    private bool TargetIsOutsideSafeHavenAndInParty(Transform _target)
+    {
+        if (Vector3.Distance(_target.position, safeHavenBorder.transform.position) > safeHavenBorder.radius
+            && (_target.tag == "In Party" || _target.tag == "Player"))
+        {
+            return true;
+        }
+        return false;
     }
 
     private void Patrol()
