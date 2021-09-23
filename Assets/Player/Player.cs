@@ -104,8 +104,8 @@ public class Player : MonoBehaviour
             new Vector3(mainCamera.transform.forward.x, 0f, mainCamera.transform.forward.z).normalized;
         Vector3 cameraRight = mainCamera.transform.right.normalized;
 
-        movement = cameraForward * inputMoveDirection.z * walkSpeed * Time.fixedDeltaTime +
-                   cameraRight * inputMoveDirection.x * walkSpeed * Time.fixedDeltaTime;
+        movement = ((cameraForward * inputMoveDirection.z) + (cameraRight * inputMoveDirection.x)) * walkSpeed
+            * EnemyBaseManager.Instance.GetMovementSpeedMultiplier() * Time.fixedDeltaTime;
 
         rb.MovePosition(transform.position + movement);
 
@@ -124,6 +124,7 @@ public class Player : MonoBehaviour
         if (isMoving)
         {
             anim.SetBool("isRunning", true);
+            anim.SetFloat("RunSpeed", EnemyBaseManager.Instance.GetMovementSpeedMultiplier());
         }
         else
         {
@@ -319,8 +320,8 @@ public class Player : MonoBehaviour
 
     public void DealDamage(Enemy enemyTarget)
     {
-        enemyTarget.TakeDamage(weaponDamage);
-        Debug.Log("Player attacks " + enemyTarget.gameObject.name + " (-" + weaponDamage + ")");
+        enemyTarget.TakeDamage(weaponDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
+        Debug.Log("Player attacks " + enemyTarget.gameObject.name + " (-" + weaponDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
     }
 
     private void RemovePartyMember(int _memberUID)

@@ -1656,9 +1656,9 @@ GameObject:
   m_Component:
   - component: {fileID: 4990006842211529632}
   - component: {fileID: 4990006842211529637}
+  - component: {fileID: 4990006842211529633}
   - component: {fileID: 4990006842211529636}
   - component: {fileID: 4990006842211529659}
-  - component: {fileID: 4990006842211529633}
   - component: {fileID: 766170488487749396}
   - component: {fileID: 3702939541231186531}
   m_Layer: 8
@@ -1699,6 +1699,41 @@ CapsuleCollider:
   m_Height: 3.5
   m_Direction: 1
   m_Center: {x: 0, y: 0.75, z: 0}
+--- !u!114 &4990006842211529633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4990006842211529658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b952e68b932104193e7b0082dd93e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseID: 0
+  maxHealth: 200
+  type: 1
+  sightRange: 15
+  attackRange: 2
+  timeBetweenAttacks: 3.8
+  attackDamage: 14
+  patrolPoints: []
+  patrolPointPadding: 0.7
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 1536
+  anim: {fileID: 4990006841227937848}
+  showDebugGizmos: 0
+  healthBar: {fileID: 2559627281389910281}
+  baseIDShaderEffect: {fileID: 5784578557411164784}
+  baseIDShaderMats:
+  - {fileID: 2100000, guid: 9a5e2a1d9fe8fa047abca278aaceb794, type: 2}
+  - {fileID: 2100000, guid: cdf1238297ad5f04e8d5918b9e27a28f, type: 2}
+  - {fileID: 2100000, guid: 4312f5d1a87f86b46b1afe52351eac34, type: 2}
+  - {fileID: 2100000, guid: 7e8ee515fbac7a04f9756eaaa1d84acc, type: 2}
+  - {fileID: 2100000, guid: b4810febafa91a14b82f1830c0d00148, type: 2}
+  - {fileID: 2100000, guid: 026704860f2c7ee4a8cbcb063560ef12, type: 2}
 --- !u!195 &4990006842211529636
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -1737,41 +1772,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &4990006842211529633
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4990006842211529658}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 73b952e68b932104193e7b0082dd93e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  baseID: 0
-  maxHealth: 200
-  type: 1
-  sightRange: 15
-  attackRange: 2
-  timeBetweenAttacks: 3.8
-  attackDamage: 14
-  patrolPoints: []
-  patrolPointPadding: 0.7
-  targetLayers:
-    serializedVersion: 2
-    m_Bits: 1536
-  anim: {fileID: 4990006841227937848}
-  showDebugGizmos: 0
-  healthBar: {fileID: 2559627281389910281}
-  baseIDShaderEffect: {fileID: 5784578557411164784}
-  baseIDShaderMats:
-  - {fileID: 2100000, guid: 9a5e2a1d9fe8fa047abca278aaceb794, type: 2}
-  - {fileID: 2100000, guid: cdf1238297ad5f04e8d5918b9e27a28f, type: 2}
-  - {fileID: 2100000, guid: 4312f5d1a87f86b46b1afe52351eac34, type: 2}
-  - {fileID: 2100000, guid: 7e8ee515fbac7a04f9756eaaa1d84acc, type: 2}
-  - {fileID: 2100000, guid: b4810febafa91a14b82f1830c0d00148, type: 2}
-  - {fileID: 2100000, guid: 026704860f2c7ee4a8cbcb063560ef12, type: 2}
 --- !u!114 &766170488487749396
 MonoBehaviour:
   m_ObjectHideFlags: 0

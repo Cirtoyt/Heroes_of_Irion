@@ -99,7 +99,7 @@ public class Enemy : MonoBehaviour
 
     private bool TargetIsOutsideSafeHavenAndInParty(Transform _target)
     {
-        if (Vector3.Distance(_target.position, safeHavenBorder.transform.position) > safeHavenBorder.radius
+        if (_target && Vector3.Distance(_target.position, safeHavenBorder.transform.position) > safeHavenBorder.radius
             && (_target.tag == "In Party" || _target.tag == "Player"))
         {
             return true;
@@ -181,11 +181,11 @@ public class Enemy : MonoBehaviour
             // Attack
             if (target.TryGetComponent(out Player playerScript))
             {
-                playerScript.TakeDamage(attackDamage);
+                playerScript.TakeDamage(attackDamage * EnemyBaseManager.Instance.GetIncomingDamageMultiplier());
             }
             else if (target.TryGetComponent(out SquadMember squadMemberScript))
             {
-                squadMemberScript.TakeDamage(attackDamage);
+                squadMemberScript.TakeDamage(attackDamage * EnemyBaseManager.Instance.GetIncomingDamageMultiplier());
             }
 
             if (type == EnemyType.REGULAR)
@@ -214,7 +214,7 @@ public class Enemy : MonoBehaviour
                     lastAttack = 2;
                 }
             }
-            Debug.Log(gameObject.name + " attacks " + target.name + " (-" + attackDamage + ")");
+            Debug.Log(gameObject.name + " attacks " + target.name + " (-" + attackDamage * EnemyBaseManager.Instance.GetIncomingDamageMultiplier() + ")");
 
             alreadyAttacked = true;
             Invoke(nameof(ResetAttack), timeBetweenAttacks);

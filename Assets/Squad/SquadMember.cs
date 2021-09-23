@@ -30,6 +30,7 @@ public class SquadMember : MonoBehaviour
 
     [SerializeField] private States state;
     [SerializeField] private float maxHealth;
+    [SerializeField] private float walkSpeed;
     [SerializeField] private float pathingSearchRate;
     [SerializeField] private float enemyCheckRadius;
     [SerializeField] private float enemyCheckRate;
@@ -38,7 +39,6 @@ public class SquadMember : MonoBehaviour
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private Animator anim;
     [SerializeField] private bool showDubugGizmos;
-    [SerializeField] private GameObject healthBar;
 
     private Rigidbody rb;
     private NavMeshAgent agent;
@@ -50,9 +50,31 @@ public class SquadMember : MonoBehaviour
     private PartyHUD partyHUD;
     private SphereCollider safeHavenBorder;
 
+    private float swordsmanAttackDamage = 7f;
+    private float swordsmanAttackSpeed = 1.3f;
+    private float swordsmanAttackDelay = 1.6f;
+    private float tankAttackDamage = 7f;
+    private float tankAttackSpeed = 1.8f;
+    private float tankAttackDelay = 2.2f;
+    private float archerAttackDamage = 5f;
+    private float archerFireBowSpeed = 0.5f;
+    private float archerAttackDelay = 2.5f;
+    private float archerAttackAirTime = 0.8f;
+    private float rogueAttackDamage = 4f;
+    private float rogueAttackSpeed = 1.3f;
+    private float rogueAttackDelay = 0.8f;
+    private float sorcererAttackDamage = 6f;
+    private float sorcererCastSpeed = 0.8f;
+    private float sorcererAttackDelay = 3.1f;
+    private float sorcererAttackAirTime = 1.3f;
+    private float healerHealAmount = 15f;
+    private float healerCastSpeed = 0.8f;
+    private float healerHealDelay = 3.9f;
+    private float healerHealAirTime = 1.3f;
+
     private Vector3 followPoint;
     private bool isFollowing;
-    [SerializeField] private int partyPosition;
+    private int partyPosition;
     private Transform closestEnemyFound;
     private Vector3 engagePos;
     private bool canAttack;
@@ -94,6 +116,8 @@ public class SquadMember : MonoBehaviour
     
     void Update()
     {
+        ProcessMultipliers();
+
         switch (state)
         {
             case States.IDLE:
@@ -171,10 +195,12 @@ public class SquadMember : MonoBehaviour
             preCombatState = state;
             state = States.CHASING;
         }
+    }
 
-        //rotation stuff
-        //agent.updateRotation = false;
-        //transform.LookAt(agent.desiredVelocity);
+    void ProcessMultipliers()
+    {
+        agent.speed = walkSpeed * EnemyBaseManager.Instance.GetMovementSpeedMultiplier();
+        anim.SetFloat("RunSpeed", EnemyBaseManager.Instance.GetMovementSpeedMultiplier());
     }
 
     private void UpdateFollowPointWithBeltPos()
@@ -432,60 +458,43 @@ public class SquadMember : MonoBehaviour
         {
             case Classes.Swordsman:
                 {
-                    float attackDelay = 1.6f;
-                    float attackDamage = 7;
-
-                    float attackSpeed = (attackDelay / 1.2f);
-                    anim.SetFloat("AttackSpeed", attackSpeed);
+                    anim.SetFloat("AttackSpeed", swordsmanAttackSpeed);
                     anim.SetTrigger("Attack1");
-                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(attackDamage);
+                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(swordsmanAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
                     Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                              + " (-" + attackDamage + ")");
+                              + " (-" + swordsmanAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
 
-                    yield return new WaitForSeconds(attackDelay);
+                    yield return new WaitForSeconds(swordsmanAttackDelay);
                     break;
                 }
             case Classes.Tank:
                 {
-                    float attackDelay = 2.2f;
-                    float attackDamage = 7;
-
-                    float attackSpeed = (attackDelay / 1.2f);
-                    anim.SetFloat("AttackSpeed", attackSpeed);
+                    anim.SetFloat("AttackSpeed", tankAttackSpeed);
                     anim.SetTrigger("Attack2");
-                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(attackDamage);
+                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(tankAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
                     Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                              + " (-" + attackDamage + ")");
+                              + " (-" + tankAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
 
-                    yield return new WaitForSeconds(attackDelay);
+                    yield return new WaitForSeconds(tankAttackDelay);
                     break;
                 }
             case Classes.Archer:
-                {
-                    float attackTime = 0.3f;
-                    float attackDelay = 2.5f;
-                    float attackDamage = 5;
-                    
-                    float attackSpeed = (attackTime / 1.2f) * 2;
-                    anim.SetFloat("AttackSpeed", attackSpeed);
+                {   
+                    anim.SetFloat("AttackSpeed", archerFireBowSpeed);
                     //play animation
 
-                    yield return new WaitForSeconds(attackTime);
+                    yield return new WaitForSeconds(archerAttackAirTime);
 
-                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(attackDamage);
+                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(archerAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
                     Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                              + " (-" + attackDamage + ")");
+                              + " (-" + archerAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
 
-                    yield return new WaitForSeconds(attackDelay);
+                    yield return new WaitForSeconds(archerAttackDelay - archerAttackAirTime);
                     break;
                 }
             case Classes.Rogue:
                 {
-                    float attackDelay = 0.8f;
-                    float attackDamage = 4;
-
-                    float attackSpeed = (attackDelay / 1.2f) * 2;
-                    anim.SetFloat("AttackSpeed", attackSpeed);
+                    anim.SetFloat("AttackSpeed", rogueAttackSpeed);
                     if (lastAttack == 0 || lastAttack == 2)
                     {
                         anim.SetTrigger("Attack4");
@@ -497,44 +506,34 @@ public class SquadMember : MonoBehaviour
                         lastAttack = 2;
                     }
 
-                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(attackDamage);
+                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(rogueAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
                     Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                              + " (-" + attackDamage + ")");
+                              + " (-" + rogueAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
 
-                    yield return new WaitForSeconds(attackDelay);
+                    yield return new WaitForSeconds(rogueAttackDelay);
                     break;
                 }
             case Classes.Sorcerer:
                 {
-                    float attackTime = 0.5f;
-                    float attackDelay = 3.1f;
-                    float attackDamage = 6;
-
-                    float attackSpeed = (attackTime / 1.2f) * 2;
-                    anim.SetFloat("AttackSpeed", attackSpeed);
+                    anim.SetFloat("AttackSpeed", sorcererCastSpeed);
                     //play animation
 
-                    yield return new WaitForSeconds(attackTime);
+                    yield return new WaitForSeconds(sorcererAttackAirTime);
 
                     anim.SetTrigger("Attack2");
-                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(attackDamage);
+                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(sorcererAttackDamage * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
                     Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                              + " (-" + attackDamage + ")");
+                              + " (-" + sorcererAttackDamage * EnemyBaseManager.Instance.GetMagicDamageMultiplier() + ")");
 
-                    yield return new WaitForSeconds(attackDelay);
+                    yield return new WaitForSeconds(sorcererAttackDelay - sorcererAttackAirTime);
                     break;
                 }
             case Classes.Healer:
                 {
-                    float healTime = 0.5f;
-                    float healDelay = 3.9f;
-                    float healAmount = 15;
-                    
-                    float attackSpeed = (healTime / 1.2f) * 2;
-                    anim.SetFloat("AttackSpeed", attackSpeed);
+                    anim.SetFloat("AttackSpeed", sorcererCastSpeed);
                     anim.SetTrigger("Attack3");
 
-                    yield return new WaitForSeconds(healTime);
+                    yield return new WaitForSeconds(healerHealAirTime);
 
                     SquadMember weakestSM = this;
                     float lowestHealth = Mathf.Infinity;
@@ -553,13 +552,13 @@ public class SquadMember : MonoBehaviour
                     {
                         float oldHealth = weakestSM.GetHealth();
 
-                        weakestSM.HealHealth(healAmount);
+                        weakestSM.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
 
                         float healingDone = weakestSM.GetHealth() - oldHealth;
                         Debug.Log(gameObject.name + " heals " + weakestSM.gameObject.name +
                                   " (+" + healingDone + ")");
                     }
-                    yield return new WaitForSeconds(healDelay);
+                    yield return new WaitForSeconds(healerHealDelay - healerHealAirTime);
                     break;
                 }
         }
