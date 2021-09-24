@@ -19,6 +19,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float attackDelay;
     [SerializeField] private float weaponDamage;
     [SerializeField] private Image healthBar;
+    [SerializeField] private GameObject pauseMenu;
     [Header("Camera")]
     [SerializeField] private Transform cameraArm;
     [SerializeField] private Transform cameraFocus;
@@ -37,6 +38,7 @@ public class Player : MonoBehaviour
     private ActionMenu actionMenu;
     private PartyHUD partyHUD;
     private Weapon weapon;
+    private SphereCollider safeHavenBorder;
 
     private Vector3 inputLookDirection;
     private float xAxisRotation;
@@ -47,6 +49,8 @@ public class Player : MonoBehaviour
     private int lastAttack = 0;
     private bool selectingTarget;
     private Transform highlightedEnemy;
+    private bool gameIsPaused = false;
+    private CursorLockMode currentCursorLockMode;
 
     void Start()    
     {
@@ -58,30 +62,72 @@ public class Player : MonoBehaviour
         actionMenu = FindObjectOfType<ActionMenu>();
         partyHUD = FindObjectOfType<PartyHUD>();
         weapon = GetComponentInChildren<Weapon>();
+        safeHavenBorder = GameObject.FindGameObjectWithTag("Safe Haven").GetComponent<SphereCollider>();
 
         Cursor.lockState = CursorLockMode.Locked;
+        currentCursorLockMode = CursorLockMode.Locked;
         health = maxHealth;
     }
     
     void Update()
     {
-        PivotCamera();
+        if (!gameIsPaused)
+        {
+            PivotCamera();
+        }
+        else
+        {
+            isMoving = false;
+        }
         UpdateAnimator();
+
+        if (selectingTarget)
+        {
+            bool allMembersAreOutsideSafeHaven = true;
+            foreach (int partyPos in actionMenu.selectedPartyMembers)
+            {
+                SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(partyPos);
+                if (Vector3.Distance(member.transform.position, safeHavenBorder.transform.position) <= safeHavenBorder.radius)
+                {
+                    allMembersAreOutsideSafeHaven = false;
+                }
+            }
+
+            if (!allMembersAreOutsideSafeHaven)
+            {
+                selectingTarget = false;
+                // Remove selected party positions/members after action is cancelled
+                actionMenu.selectedPartyMembers.Clear();
+            }
+        }
     }
 
     private void LateUpdate()
     {
         // Triggering enemy outline
-        if (selectingTarget && Physics.SphereCast(transform.position, interactHalfWidth, transform.forward, out RaycastHit hit, attackHighlightRange, enemyLayer))
+        if (selectingTarget && Physics.SphereCast(transform.position - (transform.forward * interactHalfWidth), interactHalfWidth, transform.forward, out RaycastHit enemyHit, attackHighlightRange, enemyLayer))
         {
-            hit.transform.GetComponent<Outline>().enabled = true;
-            hit.transform.GetComponent<OutlineCanceler>().enabled = true;
+            enemyHit.transform.GetComponent<Outline>().enabled = true;
+            enemyHit.transform.GetComponent<OutlineCanceler>().enabled = true;
+        }
+
+        // Triggering squad member not in party outline
+        if (Physics.SphereCast(transform.position - (transform.forward * interactHalfWidth), interactHalfWidth, transform.forward,
+                               out RaycastHit memberHit, interactRange, memberLayer))
+        {
+            if (memberHit.transform.tag == "Untagged")
+            {
+                memberHit.transform.GetComponent<Outline>().enabled = true;
+                memberHit.transform.GetComponent<OutlineCanceler>().enabled = true;
+            }
+            
         }
     }
 
     private void FixedUpdate()
     {
-        MovePlayer();
+        if (!gameIsPaused)
+            MovePlayer();
     }
 
     private void PivotCamera()
@@ -132,8 +178,7 @@ public class Player : MonoBehaviour
         }
 
         //Attack speed
-        float attackSpeed = (attackDelay / 1.2f) * 2;
-        anim.SetFloat("AttackSpeed", attackSpeed);
+        anim.SetFloat("AttackSpeed", 1.3f);
     }
 
     private void OnLook(InputValue value)
@@ -155,95 +200,122 @@ public class Player : MonoBehaviour
 
     private void OnMouseLeftButton(InputValue value)
     {
-        // Effect UI wheel if active
-        if (actionMenu.transform.Find("Menu Contents").gameObject.activeInHierarchy)
+        if (!gameIsPaused)
         {
-            actionMenu.transform.Find("Menu Contents").gameObject.SetActive(false);
-            Cursor.lockState = CursorLockMode.Locked;
-
-            // Detect which action is to be executed and to whome (using party position)
-            switch (actionMenu.lastSelectedAction)
+            // Effect UI wheel if active
+            if (actionMenu.transform.Find("Menu Contents").gameObject.activeInHierarchy)
             {
-                case Actions.REMOVEFROMPARTY:
-                    {
-                        List<int> sortedList = actionMenu.selectedPartyMembers;
-                        sortedList.Sort();
-                        sortedList.Reverse();
-                        foreach (int partyPos in sortedList)
+                actionMenu.transform.Find("Menu Contents").gameObject.SetActive(false);
+                Cursor.lockState = CursorLockMode.Locked;
+                currentCursorLockMode = CursorLockMode.Locked;
+
+                // Detect which action is to be executed and to whome (using party position)
+                switch (actionMenu.lastSelectedAction)
+                {
+                    case Actions.REMOVEFROMPARTY:
                         {
-                            int memberUID = partyMngr.GetUIDFromPositionInParty(partyPos);
-                            RemovePartyMember(memberUID);
+                            List<int> sortedList = actionMenu.selectedPartyMembers;
+                            sortedList.Sort();
+                            sortedList.Reverse();
+                            foreach (int partyPos in sortedList)
+                            {
+                                int memberUID = partyMngr.GetUIDFromPositionInParty(partyPos);
+                                RemovePartyMember(memberUID);
+                            }
+                            partyHUD.UpdateHUD(1);
+                            partyHUD.UpdateHUD(2);
+                            partyHUD.UpdateHUD(3);
+                            partyHUD.UpdateHUD(4);
+
+                            // Remove selected party positions/members after action is executed
+                            actionMenu.selectedPartyMembers.Clear();
                         }
-                        partyHUD.UpdateHUD(1);
-                        partyHUD.UpdateHUD(2);
-                        partyHUD.UpdateHUD(3);
-                        partyHUD.UpdateHUD(4);
-                    }
-                    break;
-                case Actions.REGROUP:
-                    {
-                        foreach (int partyPos in actionMenu.selectedPartyMembers)
+                        break;
+                    case Actions.REGROUP:
                         {
-                            int memberUID = partyMngr.GetUIDFromPositionInParty(partyPos);
-                            RegroupPartyMember(memberUID);
+                            foreach (int partyPos in actionMenu.selectedPartyMembers)
+                            {
+                                int memberUID = partyMngr.GetUIDFromPositionInParty(partyPos);
+                                RegroupPartyMember(memberUID);
+                            }
+
+                            // Remove selected party positions/members after action is executed
+                            actionMenu.selectedPartyMembers.Clear();
                         }
-                    }
-                    break;
-                case Actions.ATTACK:
-                    {
-                        selectingTarget = true;
-                    }
-                    break;
+                        break;
+                    case Actions.ATTACK:
+                        {
+                            bool allMembersAreOutsideSafeHaven = true;
+                            foreach (int partyPos in actionMenu.selectedPartyMembers)
+                            {
+                                SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(partyPos);
+                                if (Vector3.Distance(member.transform.position, safeHavenBorder.transform.position) <= safeHavenBorder.radius)
+                                {
+                                    allMembersAreOutsideSafeHaven = false;
+                                }
+                            }
+
+                            if (allMembersAreOutsideSafeHaven)
+                                selectingTarget = true;
+                            else
+                                // Remove selected party positions/members after action is cancelled
+                                actionMenu.selectedPartyMembers.Clear();
+                        }
+                        break;
+                }
             }
-
-            // Remove selected party positions/members after action is executed
-            actionMenu.selectedPartyMembers.Clear();
-        }
-        // else if any other menu is open
-        // Perform regular in-world attacks
-        else
-        {
-            if (canAttack)
+            // else if any other menu is open
+            // Perform regular in-world attacks
+            else
             {
-                StartCoroutine(Attack());
+                if (canAttack)
+                {
+                    StartCoroutine(Attack());
+                }
             }
         }
     }
 
     private void OnMouseRightButton(InputValue value)
     {
-        if (selectingTarget)
+        if (!gameIsPaused)
         {
-            // Look for enemy
-            if (Physics.SphereCast(transform.position, interactHalfWidth, transform.forward,
-                               out RaycastHit hit, attackHighlightRange, enemyLayer))
+            if (selectingTarget)
             {
-                // Command party members to attack target
-                foreach (int partyPos in actionMenu.selectedPartyMembers)
+                // Look for enemy
+                if (Physics.SphereCast(transform.position - (transform.forward * interactHalfWidth), interactHalfWidth, transform.forward,
+                                   out RaycastHit hit, attackHighlightRange, enemyLayer))
                 {
-                    int memberUID = partyMngr.GetUIDFromPositionInParty(partyPos);
-                    AttackTarget(memberUID, hit.transform);
+                    // Command party members to attack target
+                    foreach (int partyPos in actionMenu.selectedPartyMembers)
+                    {
+                        int memberUID = partyMngr.GetUIDFromPositionInParty(partyPos);
+                        AttackTarget(memberUID, hit.transform);
+                    }
                 }
+                else
+                {
+                    Debug.Log("No enemy found to attack");
+                }
+
+                selectingTarget = false;
+
+                // Remove selected party positions/members after action is executed
+                actionMenu.selectedPartyMembers.Clear();
             }
             else
             {
-                Debug.Log("No enemy found to attack");
-            }
-
-            selectingTarget = false;
-        }
-        else
-        {
-            // Check for member in-front of player
-            if (Physics.SphereCast(transform.position, interactHalfWidth, transform.forward,
-                               out RaycastHit hit, interactRange, memberLayer))
-            {
-                if (hit.transform.TryGetComponent(out SquadMember hitMember))
+                // Check for member in-front of player
+                if (Physics.SphereCast(transform.position - (transform.forward * interactHalfWidth), interactHalfWidth, transform.forward,
+                                   out RaycastHit hit, interactRange, memberLayer))
                 {
-                    // If not in party, add to party
-                    if (partyMngr.GetPositionInParty(hitMember.squadMemberUID) == -1)
+                    if (hit.transform.TryGetComponent(out SquadMember hitMember))
                     {
-                        AddPartyMember(hitMember);
+                        // If not in party, add to party
+                        if (partyMngr.GetPositionInParty(hitMember.squadMemberUID) == -1)
+                        {
+                            AddPartyMember(hitMember);
+                        }
                     }
                 }
             }
@@ -252,26 +324,50 @@ public class Player : MonoBehaviour
 
     private void OnOpenPartyMember1ActionMenu(InputValue value)
     {
-        if (partyMngr.partyMembers.Count > 1)
+        if (!gameIsPaused && !selectingTarget && partyMngr.partyMembers.Count > 1)
             OpenActionMenu(1);
     }
 
     private void OnOpenPartyMember2ActionMenu(InputValue value)
     {
-        if (partyMngr.partyMembers.Count > 2)
+        if (!gameIsPaused && !selectingTarget && partyMngr.partyMembers.Count > 2)
             OpenActionMenu(2);
     }
 
     private void OnOpenPartyMember3ActionMenu(InputValue value)
     {
-        if (partyMngr.partyMembers.Count > 3)
+        if (!gameIsPaused && !selectingTarget && partyMngr.partyMembers.Count > 3)
             OpenActionMenu(3);
     }
 
     private void OnOpenPartyMember4ActionMenu(InputValue value)
     {
-        if (partyMngr.partyMembers.Count > 4)
+        if (!gameIsPaused && !selectingTarget && partyMngr.partyMembers.Count > 4)
             OpenActionMenu(4);
+    }
+
+    private void OnOpenClosePauseMenu(InputValue value)
+    {
+        if (!gameIsPaused)
+        {
+            gameIsPaused = true;
+            Cursor.lockState = CursorLockMode.Confined;
+            pauseMenu.SetActive(true);
+        }
+        else
+        {
+            ClosePauseMenu();
+        }
+    }
+
+    public void ClosePauseMenu()
+    {
+        gameIsPaused = false;
+        if (currentCursorLockMode == CursorLockMode.Locked)
+            Cursor.lockState = CursorLockMode.Locked;
+        else if (currentCursorLockMode == CursorLockMode.Confined)
+            Cursor.lockState = CursorLockMode.Confined;
+        pauseMenu.SetActive(false);
     }
 
     private void OpenActionMenu(int partyPosition)
@@ -279,6 +375,7 @@ public class Player : MonoBehaviour
         if (!actionMenu.transform.Find("Menu Contents").gameObject.activeInHierarchy)
         {
             Cursor.lockState = CursorLockMode.Confined;
+            currentCursorLockMode = CursorLockMode.Confined;
             actionMenu.transform.Find("Menu Contents").gameObject.SetActive(true);
         }
         if (partyMngr.partyMembers.Contains(partyMngr.GetUIDFromPositionInParty(partyPosition))
@@ -418,5 +515,15 @@ public class Player : MonoBehaviour
         {
             health = maxHealth;
         }
+    }
+
+    public float GetHealth()
+    {
+        return health;
+    }
+
+    public float GetMaxHealth()
+    {
+        return maxHealth;
     }
 }

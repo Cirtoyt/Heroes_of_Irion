@@ -70,7 +70,7 @@ public class SquadMember : MonoBehaviour
     private float healerHealAmount = 15f;
     private float healerCastSpeed = 0.8f;
     private float healerHealDelay = 3.9f;
-    private float healerHealAirTime = 1.3f;
+    private float healerHealAirTime = 0.5f;
 
     private Vector3 followPoint;
     private bool isFollowing;
@@ -113,7 +113,7 @@ public class SquadMember : MonoBehaviour
         followPoint = GenerateGroundedPosition(transform.position);
         BeginSearchingForEnemies();
     }
-    
+
     void Update()
     {
         ProcessMultipliers();
@@ -271,6 +271,7 @@ public class SquadMember : MonoBehaviour
         if (closestEnemyFound
             && Vector3.Distance(transform.position, closestEnemyFound.position) > enemyEngagePosPadding)
         {
+            closestEnemyFound = null;
             if (preCombatState == States.CASUALFOLLOWING)
             {
                 state = preCombatState;
@@ -530,11 +531,6 @@ public class SquadMember : MonoBehaviour
                 }
             case Classes.Healer:
                 {
-                    anim.SetFloat("AttackSpeed", sorcererCastSpeed);
-                    anim.SetTrigger("Attack3");
-
-                    yield return new WaitForSeconds(healerHealAirTime);
-
                     SquadMember weakestSM = this;
                     float lowestHealth = Mathf.Infinity;
                     SquadMember[] members = FindObjectsOfType<SquadMember>();
@@ -548,8 +544,34 @@ public class SquadMember : MonoBehaviour
                         }
                     }
 
-                    if (weakestSM.GetHealth() < maxHealth)
+                    bool playerIsLowest = false;
+                    if (playerScript.GetHealth() < lowestHealth)
                     {
+                        playerIsLowest = true;
+                    }
+
+                    if (playerIsLowest && playerScript.GetHealth() < playerScript.GetMaxHealth())
+                    {
+                        anim.SetFloat("AttackSpeed", sorcererCastSpeed);
+                        anim.SetTrigger("Attack3");
+
+                        yield return new WaitForSeconds(healerHealAirTime);
+
+                        float oldHealth = playerScript.GetHealth();
+
+                        playerScript.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
+
+                        float healingDone = weakestSM.GetHealth() - oldHealth;
+                        Debug.Log(gameObject.name + " heals " + player.name +
+                                  " (+" + healingDone + ")");
+                    }
+                    else if (weakestSM.GetHealth() < weakestSM.GetMaxHealth())
+                    {
+                        anim.SetFloat("AttackSpeed", sorcererCastSpeed);
+                        anim.SetTrigger("Attack3");
+
+                        yield return new WaitForSeconds(healerHealAirTime);
+
                         float oldHealth = weakestSM.GetHealth();
 
                         weakestSM.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
@@ -606,6 +628,20 @@ public class SquadMember : MonoBehaviour
     public void ChangeAttackTarget(Transform newTarget)
     {
         closestEnemyFound = newTarget;
+
+        StopFollowingButKeepAgentOn();
+        CancelInvoke(nameof(CheckForEnemyPresence));
+
+        engagePos = GetCombatPosition();
+
+        if (engagePos != transform.position)
+        {
+            agent.SetDestination(engagePos);
+            anim.SetBool("isRunning", true);
+        }
+
+        preCombatState = state;
+        state = States.CHASING;
     }
 
     public void TakeDamage(float _damage)

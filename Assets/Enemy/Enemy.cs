@@ -76,8 +76,8 @@ public class Enemy : MonoBehaviour
         }
 
         if (!targetInSightRange && !targetInAttackRange) Patrol();
-        else if (targetInSightRange && !targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target.transform)) ChasePlayer();
-        else if (targetInSightRange && targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target.transform)) AttackPlayer();
+        else if (targetInSightRange && !targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target)) ChaseEnemy();
+        else if (targetInSightRange && targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target)) AttackEnemy();
         else Patrol();
     }
 
@@ -157,7 +157,7 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    private void ChasePlayer()
+    private void ChaseEnemy()
     {
         obstacle.enabled = false;
         agent.enabled = true;
@@ -167,7 +167,7 @@ public class Enemy : MonoBehaviour
         agent.SetDestination(target.position);
     }
 
-    private void AttackPlayer()
+    private void AttackEnemy()
     {
         agent.enabled = false;
         obstacle.enabled = true;

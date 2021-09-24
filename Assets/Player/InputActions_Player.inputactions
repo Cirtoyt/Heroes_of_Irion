@@ -76,6 +76,14 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
+                },
+                {
+                    "name": "Open Close Pause Menu",
+                    "type": "Button",
+                    "id": "518b353a-f6e5-4a0d-a509-bb41d50555cf",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
                 }
             ],
             "bindings": [
@@ -219,6 +227,17 @@
                     "processors": "",
                     "groups": "Keyboard & Mouse",
                     "action": "Mouse Left Button",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9394ca6a-e925-45fd-86bb-82aa1d5d12be",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard & Mouse",
+                    "action": "Open Close Pause Menu",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

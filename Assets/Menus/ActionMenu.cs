@@ -15,6 +15,7 @@ public class ActionMenu : MonoBehaviour
 
     private Player player;
     private PartyManager partyMngr;
+    private SphereCollider safeHavenBorder;
 
     private Vector2 normCursorPos;
     private float currentAngle;
@@ -26,6 +27,7 @@ public class ActionMenu : MonoBehaviour
         selectedPartyMembers = new List<int>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<Player>();
         partyMngr = FindObjectOfType<PartyManager>();
+        safeHavenBorder = GameObject.FindGameObjectWithTag("Safe Haven").GetComponent<SphereCollider>();
     }
     
     void Update()
@@ -60,14 +62,25 @@ public class ActionMenu : MonoBehaviour
             
             // Check if any members are chasing or in-combat
             SquadMember[] members = FindObjectsOfType<SquadMember>();
-            bool anyMembersInCombat = false;
+            bool anyMembersInChasingOrCombat = false;
             foreach (SquadMember member in members)
             {
-                if (!anyMembersInCombat
+                if (!anyMembersInChasingOrCombat
                     && (member.GetMemberState() == SquadMember.States.INCOMBAT
                         || member.GetMemberState() == SquadMember.States.CHASING))
                 {
-                    anyMembersInCombat = true;
+                    anyMembersInChasingOrCombat = true;
+                }
+            }
+
+            // Check if all selected members are outside safe haven
+            bool allMembersAreOutsideSafeHaven = true;
+            foreach (int partyPos in selectedPartyMembers)
+            {
+                SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(partyPos);
+                if (Vector3.Distance(member.transform.position, safeHavenBorder.transform.position) <= safeHavenBorder.radius)
+                {
+                    allMembersAreOutsideSafeHaven = false;
                 }
             }
 
@@ -76,7 +89,7 @@ public class ActionMenu : MonoBehaviour
             {
                 ActionMenuOption optionScript = option.GetComponent<ActionMenuOption>();
 
-                if (anyMembersInCombat && optionScript.GetActionType() == Actions.REMOVEFROMPARTY)
+                if (anyMembersInChasingOrCombat && optionScript.GetActionType() == Actions.REMOVEFROMPARTY)
                 {
                     optionScript.Dim();
                     if (lastSelectedAction == Actions.REMOVEFROMPARTY)
@@ -84,13 +97,17 @@ public class ActionMenu : MonoBehaviour
                         lastSelectedAction = Actions.NONE;
                     }
                 }
-                else if (!anyMembersInCombat && optionScript.GetActionType() == Actions.REGROUP)
+                else if (!anyMembersInChasingOrCombat && optionScript.GetActionType() == Actions.REGROUP)
                 {
                     optionScript.Dim();
                     if (lastSelectedAction == Actions.REGROUP)
                     {
                         lastSelectedAction = Actions.NONE;
                     }
+                }
+                else if (!allMembersAreOutsideSafeHaven && optionScript.GetActionType() == Actions.ATTACK)
+                {
+                    optionScript.Dim();
                 }
                 else
                 {
