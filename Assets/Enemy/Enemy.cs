@@ -18,8 +18,11 @@ public class Enemy : MonoBehaviour
     [SerializeField] private float attackRange;
     [SerializeField] private float timeBetweenAttacks;
     [SerializeField] private float attackDamage;
+    [SerializeField] private float inCombatRotationSpeed;
     [SerializeField] private List<Transform> patrolPoints;
     [SerializeField] private float patrolPointPadding;
+    [SerializeField] private float minPatrolPauseTime;
+    [SerializeField] private float maxPatrolPauseTime;
     [SerializeField] private LayerMask targetLayers;
     [SerializeField] private Animator anim;
     [SerializeField] private bool showDebugGizmos;
@@ -32,8 +35,9 @@ public class Enemy : MonoBehaviour
     private SphereCollider safeHavenBorder;
 
     private bool targetInSightRange;
-    private Vector3 nextPatrolPoint;
-    private bool nextPatrolPointSet;
+    private Transform nextPatrolPoint;
+    private Vector3 nextPatrolPointPos;
+    private bool isWaiting;
 
     private bool targetInAttackRange;
     private Transform target;
@@ -75,8 +79,7 @@ public class Enemy : MonoBehaviour
             GetClosestEnemy();
         }
 
-        if (!targetInSightRange && !targetInAttackRange) Patrol();
-        else if (targetInSightRange && !targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target)) ChaseEnemy();
+        if (targetInSightRange && !targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target)) ChaseEnemy();
         else if (targetInSightRange && targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target)) AttackEnemy();
         else Patrol();
     }
@@ -126,35 +129,57 @@ public class Enemy : MonoBehaviour
                 obstacle.enabled = true;
             }
         }
-        else
+        else if (patrolPoints.Count == 1)
         {
-            if (!nextPatrolPointSet)
+            nextPatrolPoint = patrolPoints[0];
+            nextPatrolPointPos = patrolPoints[0].position;
+
+            obstacle.enabled = false;
+            agent.enabled = true;
+
+            agent.SetDestination(nextPatrolPointPos);
+            anim.SetBool("isRunning", true);
+
+            if (Vector3.Distance(nextPatrolPointPos, transform.position) < patrolPointPadding)
             {
-                int i = Random.Range(0, patrolPoints.Count);
-                nextPatrolPoint = patrolPoints[i].position;
-
-                nextPatrolPointSet = true;
-            }
-
-            if (nextPatrolPointSet)
-            {
-                obstacle.enabled = false;
-                agent.enabled = true;
-
-                agent.SetDestination(nextPatrolPoint);
-
-                anim.SetBool("isRunning", true);
-            }
-
-            Vector3 distFromPatrolPoint = transform.position - nextPatrolPoint;
-
-            if (distFromPatrolPoint.magnitude < patrolPointPadding)
-            {
-                nextPatrolPointSet = false;
-
                 anim.SetBool("isRunning", false);
             }
         }
+        else if (patrolPoints.Count > 1)
+        {
+            if (!nextPatrolPoint)
+            {
+                List<Transform> otherPatrolPoints = new List<Transform>(patrolPoints);
+                otherPatrolPoints.Remove(nextPatrolPoint);
+
+                int i = Random.Range(0, otherPatrolPoints.Count);
+                nextPatrolPoint = otherPatrolPoints[i];
+                nextPatrolPointPos = otherPatrolPoints[i].position;
+
+                obstacle.enabled = false;
+                agent.enabled = true;
+
+                agent.SetDestination(nextPatrolPointPos);
+                anim.SetBool("isRunning", true);
+            }
+
+            if (!isWaiting && Vector3.Distance(nextPatrolPointPos, transform.position) < patrolPointPadding)
+            {
+                isWaiting = true;
+                anim.SetBool("isRunning", false);
+
+                StartCoroutine(nameof(WaitForSomeTime));
+            }
+        }
+    }
+
+    private IEnumerator WaitForSomeTime()
+    {
+        float WaitForSomeTime = Random.Range(minPatrolPauseTime, maxPatrolPauseTime);
+        yield return new WaitForSeconds(WaitForSomeTime);
+
+        nextPatrolPoint = null;
+        isWaiting = false;
     }
 
     private void ChaseEnemy()
@@ -164,6 +189,7 @@ public class Enemy : MonoBehaviour
 
         anim.SetBool("isRunning", true);
 
+        nextPatrolPoint = null;
         agent.SetDestination(target.position);
     }
 
@@ -174,7 +200,12 @@ public class Enemy : MonoBehaviour
 
         anim.SetBool("isRunning", false);
 
-        transform.LookAt(target);
+        nextPatrolPoint = null;
+        // Face enemy
+        Vector3 newRot = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation((target.position - transform.position).normalized), inCombatRotationSpeed * Time.deltaTime).eulerAngles;
+        newRot.x = 0;
+        newRot.z = 0;
+        transform.rotation = Quaternion.Euler(newRot);
 
         if (!alreadyAttacked)
         {

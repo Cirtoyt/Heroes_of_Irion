@@ -358,7 +358,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 2cbb167814a1e7445a3fc6df4c04fc19, type: 2}
+  - {fileID: 2100000, guid: d2e116490afd3c743b7290809c7df069, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1662,7 +1662,7 @@ GameObject:
   - component: {fileID: 766170488487749396}
   - component: {fileID: 3702939541231186531}
   m_Layer: 8
-  m_Name: Large Enemy
+  m_Name: Orc Chief
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1718,8 +1718,11 @@ MonoBehaviour:
   attackRange: 2
   timeBetweenAttacks: 3.8
   attackDamage: 14
+  inCombatRotationSpeed: 16
   patrolPoints: []
   patrolPointPadding: 0.7
+  minPatrolPauseTime: 0.5
+  maxPatrolPauseTime: 1.2
   targetLayers:
     serializedVersion: 2
     m_Bits: 1536

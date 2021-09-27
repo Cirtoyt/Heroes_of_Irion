@@ -20,6 +20,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float weaponDamage;
     [SerializeField] private Image healthBar;
     [SerializeField] private GameObject pauseMenu;
+    [SerializeField] private Transform spawnPoint;
     [Header("Camera")]
     [SerializeField] private Transform cameraArm;
     [SerializeField] private Transform cameraFocus;
@@ -485,12 +486,22 @@ public class Player : MonoBehaviour
 
     private void KillPlayer()
     {
-        // Player anim plays death animation
+        // Player anim plays death animation/particle effect
         // Non-UI input is frozen
-        // Display dead menu appears
+        // Display dead menu
         //Time.timeScale = 0;
 
         Debug.Log("Player has been defeated");
+
+        RespawnPlayer();
+    }
+
+    public void RespawnPlayer()
+    {
+        transform.position = spawnPoint.position;
+        transform.rotation = spawnPoint.rotation;
+        health = maxHealth;
+        StartCoroutine(partyHUD.SmoothBarUI(healthBar, health, maxHealth));
     }
 
     public void TakeDamage(float _Damage)

@@ -21,7 +21,7 @@ public class AudioManager : MonoBehaviour
 
         DontDestroyOnLoad(this);
 
-        soundVolume = 0.001f; //0.15f;
+        soundVolume = 0.15f;
     }
 
     [SerializeField] private AudioSource mainMenuMusic;

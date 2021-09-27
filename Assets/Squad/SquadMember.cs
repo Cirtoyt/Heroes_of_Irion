@@ -35,12 +35,16 @@ public class SquadMember : MonoBehaviour
     [SerializeField] private float enemyCheckRadius;
     [SerializeField] private float enemyCheckRate;
     [SerializeField] private float enemyEngagePosPadding;
+    [SerializeField] private float inCombatRotationSpeed;
     [SerializeField] private float leavePartyStepBackSize;
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private Animator anim;
+    [SerializeField] private Transform spawnPoint;
+    [SerializeField] private SpawnGhost spawnGhostScript;
     [SerializeField] private bool showDubugGizmos;
 
     private Rigidbody rb;
+    private GameObject characterModel;
     private NavMeshAgent agent;
     private NavMeshObstacle obstacle;
     private SquadBelt squadBelt;
@@ -51,16 +55,19 @@ public class SquadMember : MonoBehaviour
     private SphereCollider safeHavenBorder;
 
     private float swordsmanAttackDamage = 7f;
+    private float swordsmanSwingTillHitTime = 0.5f;
     private float swordsmanAttackSpeed = 1.3f;
     private float swordsmanAttackDelay = 1.6f;
     private float tankAttackDamage = 7f;
-    private float tankAttackSpeed = 1.8f;
+    private float tankSwingTillHitTime = 0.43f;
+    private float tankAttackSpeed = 1.2f;
     private float tankAttackDelay = 2.2f;
     private float archerAttackDamage = 5f;
     private float archerFireBowSpeed = 0.5f;
     private float archerAttackDelay = 2.5f;
     private float archerAttackAirTime = 0.8f;
     private float rogueAttackDamage = 4f;
+    private float rogueSwingTillHitTime = 0.3f;
     private float rogueAttackSpeed = 1.3f;
     private float rogueAttackDelay = 0.8f;
     private float sorcererAttackDamage = 6f;
@@ -75,9 +82,9 @@ public class SquadMember : MonoBehaviour
     private Vector3 followPoint;
     private bool isFollowing;
     private int partyPosition;
-    private Transform closestEnemyFound;
+    [SerializeField] private Transform closestEnemyFound;
     private Vector3 engagePos;
-    private bool canAttack;
+    [SerializeField] private bool canAttack;
     private float health;
     private bool canEngageCombat;
     private States preCombatState;
@@ -87,6 +94,7 @@ public class SquadMember : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        characterModel = transform.Find("Character Model").gameObject;
         agent = GetComponent<NavMeshAgent>();
         obstacle = GetComponent<NavMeshObstacle>();
         squadBelt = FindObjectOfType<SquadBelt>();
@@ -200,7 +208,8 @@ public class SquadMember : MonoBehaviour
     void ProcessMultipliers()
     {
         agent.speed = walkSpeed * EnemyBaseManager.Instance.GetMovementSpeedMultiplier();
-        anim.SetFloat("RunSpeed", EnemyBaseManager.Instance.GetMovementSpeedMultiplier());
+        if (anim.isActiveAndEnabled)
+            anim.SetFloat("RunSpeed", EnemyBaseManager.Instance.GetMovementSpeedMultiplier());
     }
 
     private void UpdateFollowPointWithBeltPos()
@@ -259,6 +268,15 @@ public class SquadMember : MonoBehaviour
 
     private void InCombat()
     {
+        if (closestEnemyFound)
+        {
+            // Face enemy
+            Vector3 newRot = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation((closestEnemyFound.position - transform.position).normalized), inCombatRotationSpeed * Time.deltaTime).eulerAngles;
+            newRot.x = 0;
+            newRot.z = 0;
+            transform.rotation = Quaternion.Euler(newRot);
+        }
+
         // If can attack
         if (closestEnemyFound && canAttack)
         {
@@ -287,7 +305,8 @@ public class SquadMember : MonoBehaviour
         // When enemy has been defeated, reset & check for new target
         if (!closestEnemyFound)
         {
-            canAttack = true;
+            //StopCoroutine(nameof(Attack));
+            //canAttack = true;
 
             CheckForEnemyPresence();
 
@@ -308,6 +327,7 @@ public class SquadMember : MonoBehaviour
             // Target found, goto new target
             else
             {
+                state = States.CHASING;
                 engagePos = GetCombatPosition();
                 agent.SetDestination(engagePos);
                 anim.SetBool("isRunning", true);
@@ -461,35 +481,42 @@ public class SquadMember : MonoBehaviour
                 {
                     anim.SetFloat("AttackSpeed", swordsmanAttackSpeed);
                     anim.SetTrigger("Attack1");
-                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(swordsmanAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
-                    Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                              + " (-" + swordsmanAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
+                    yield return new WaitForSeconds(swordsmanSwingTillHitTime);
+                    if (closestEnemyFound)
+                    {
+                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(swordsmanAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
+                        Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
+                                  + " (-" + swordsmanAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
+                    }
 
-                    yield return new WaitForSeconds(swordsmanAttackDelay);
+                    yield return new WaitForSeconds(swordsmanAttackDelay - swordsmanSwingTillHitTime);
                     break;
                 }
             case Classes.Tank:
                 {
                     anim.SetFloat("AttackSpeed", tankAttackSpeed);
                     anim.SetTrigger("Attack2");
-                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(tankAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
-                    Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                              + " (-" + tankAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
-
-                    yield return new WaitForSeconds(tankAttackDelay);
+                    yield return new WaitForSeconds(tankSwingTillHitTime);
+                    if (closestEnemyFound)
+                    {
+                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(tankAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
+                        Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
+                                  + " (-" + tankAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
+                    }
+                    yield return new WaitForSeconds(tankAttackDelay - tankSwingTillHitTime);
                     break;
                 }
             case Classes.Archer:
                 {   
                     anim.SetFloat("AttackSpeed", archerFireBowSpeed);
                     //play animation
-
                     yield return new WaitForSeconds(archerAttackAirTime);
-
-                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(archerAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
-                    Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                              + " (-" + archerAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
-
+                    if (closestEnemyFound)
+                    {
+                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(archerAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
+                        Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
+                                  + " (-" + archerAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
+                    }
                     yield return new WaitForSeconds(archerAttackDelay - archerAttackAirTime);
                     break;
                 }
@@ -506,26 +533,29 @@ public class SquadMember : MonoBehaviour
                         anim.SetTrigger("Attack5");
                         lastAttack = 2;
                     }
-
-                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(rogueAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
-                    Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                              + " (-" + rogueAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
-
-                    yield return new WaitForSeconds(rogueAttackDelay);
+                    yield return new WaitForSeconds(rogueSwingTillHitTime);
+                    if (closestEnemyFound)
+                    {
+                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(rogueAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
+                        Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
+                                  + " (-" + rogueAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
+                    }
+                    yield return new WaitForSeconds(rogueAttackDelay - rogueSwingTillHitTime);
                     break;
                 }
             case Classes.Sorcerer:
                 {
                     anim.SetFloat("AttackSpeed", sorcererCastSpeed);
                     //play animation
-
                     yield return new WaitForSeconds(sorcererAttackAirTime);
-
                     anim.SetTrigger("Attack2");
-                    closestEnemyFound.GetComponent<Enemy>().TakeDamage(sorcererAttackDamage * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
-                    Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                              + " (-" + sorcererAttackDamage * EnemyBaseManager.Instance.GetMagicDamageMultiplier() + ")");
-
+                    closestEnemyFound.TryGetComponent<Enemy>(out Enemy enemyComponent);
+                    if (closestEnemyFound)
+                    {
+                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(sorcererAttackDamage * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
+                        Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
+                                  + " (-" + sorcererAttackDamage * EnemyBaseManager.Instance.GetMagicDamageMultiplier() + ")");
+                    }
                     yield return new WaitForSeconds(sorcererAttackDelay - sorcererAttackAirTime);
                     break;
                 }
@@ -552,7 +582,7 @@ public class SquadMember : MonoBehaviour
 
                     if (playerIsLowest && playerScript.GetHealth() < playerScript.GetMaxHealth())
                     {
-                        anim.SetFloat("AttackSpeed", sorcererCastSpeed);
+                        anim.SetFloat("AttackSpeed", healerCastSpeed);
                         anim.SetTrigger("Attack3");
 
                         yield return new WaitForSeconds(healerHealAirTime);
@@ -651,29 +681,48 @@ public class SquadMember : MonoBehaviour
 
         if (health <= 0)
         {
-            partyMngr.RemoveMemberFromParty(squadMemberUID);
-            squadBelt.UpdateFormationPositions();
-
-            SquadMember[] members = FindObjectsOfType<SquadMember>();
-            foreach (SquadMember member in members)
-            {
-                if (member.state == States.CASUALFOLLOWING)
-                {
-                    member.BeginFollowing();
-                }
-            }
-
-            // Remove HUD display on death
-            partyHUD.UpdateHUD(4);
-            partyHUD.UpdateHUD(3);
-            partyHUD.UpdateHUD(2);
-            partyHUD.UpdateHUD(1);
-
-            // Play death animation
-            // Play death particle effects
-
-            Destroy(gameObject);
+            KillMember();
         }
+    }
+
+    private void KillMember()
+    {
+        tag = "Untagged";
+        gameObject.layer = LayerMask.NameToLayer("Ignore Raycast");
+        characterModel.SetActive(false);
+        state = States.IDLE;
+        closestEnemyFound = null;
+        transform.position = spawnPoint.position;
+        transform.rotation = spawnPoint.rotation;
+        StopFollowing();
+        // Play death animation
+        // Play death particle effects
+
+        partyMngr.RemoveMemberFromParty(squadMemberUID);
+        squadBelt.UpdateFormationPositions();
+        SquadMember[] members = FindObjectsOfType<SquadMember>();
+        foreach (SquadMember member in members)
+        {
+            if (member.state == States.CASUALFOLLOWING)
+            {
+                member.BeginFollowing();
+            }
+        }
+        // Remove HUD display on death
+        partyHUD.UpdateHUD(4);
+        partyHUD.UpdateHUD(3);
+        partyHUD.UpdateHUD(2);
+        partyHUD.UpdateHUD(1);
+
+        spawnGhostScript.BeginRespawnTimer();
+    }
+
+    public void RespawnMember()
+    {
+        health = maxHealth;
+        gameObject.layer = LayerMask.NameToLayer("Member");
+        BeginSearchingForEnemies();
+        characterModel.SetActive(true);
     }
 
     public void HealHealth(float _amount)
@@ -706,7 +755,7 @@ public class SquadMember : MonoBehaviour
         if (showDubugGizmos)
         {
             DrawCircle(transform.position, enemyCheckRadius, Color.magenta);
-            DrawCircle(transform.position + transform.forward * enemyEngagePosPadding, 0.1f, Color.red);
+            DrawCircle(transform.position, enemyEngagePosPadding, Color.red);
         }
     }
 }
