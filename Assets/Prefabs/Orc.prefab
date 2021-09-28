@@ -1716,7 +1716,8 @@ MonoBehaviour:
   type: 0
   sightRange: 15
   attackRange: 2
-  timeBetweenAttacks: 1.8
+  attackSwingTime: 0.42
+  attackDelay: 1.8
   attackDamage: 8
   inCombatRotationSpeed: 16
   patrolPoints: []

@@ -59,6 +59,24 @@ public class PartyHUD : MonoBehaviour
         }
     }
 
+    public void AddHUDHighlight(int partyPosition)
+    {
+        partyMemberHUDS[partyPosition].transform.Find("Highlight Image").gameObject.SetActive(true);
+    }
+
+    public void RemoveHUDHighlight(int partyPosition)
+    {
+        partyMemberHUDS[partyPosition].transform.Find("Highlight Image").gameObject.SetActive(false);
+    }
+
+    public void RemoveAllHUDHighlights()
+    {
+        for (int i = 1; i < partyManager.partyMembers.Count; i++)
+        {
+            partyMemberHUDS[i].transform.Find("Highlight Image").gameObject.SetActive(false);
+        }
+    }
+
     public void SetHealthBar(int partyPosition, float newHealth, float maxHealth)
     {
         if (partyManager.partyMembers.Contains(partyManager.GetUIDFromPositionInParty(partyPosition)))

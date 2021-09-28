@@ -17,6 +17,7 @@ public class Player : MonoBehaviour
     [SerializeField] private Animator anim;
     [SerializeField] private Transform meshTrans;
     [SerializeField] private float attackDelay;
+    [SerializeField] private float attackSwingTime;
     [SerializeField] private float weaponDamage;
     [SerializeField] private Image healthBar;
     [SerializeField] private GameObject pauseMenu;
@@ -25,6 +26,7 @@ public class Player : MonoBehaviour
     [SerializeField] private Transform cameraArm;
     [SerializeField] private Transform cameraFocus;
     [SerializeField] private float cameraSensitivity;
+    [SerializeField] private float cameraSmoothing;
     [SerializeField] private float topCameraMaxAngle;
     [SerializeField] private float bottomCameraMaxAngle;
 
@@ -43,13 +45,15 @@ public class Player : MonoBehaviour
 
     private Vector3 inputLookDirection;
     private float xAxisRotation;
+    private float yAxisRotation;
     private Vector3 inputMoveDirection;
     private Vector3 movement;
     private float health;
     private bool canAttack = true;
+    private bool isAttacking = false;
     private int lastAttack = 0;
+    private List<Enemy> hitTargets = new List<Enemy>();
     private bool selectingTarget;
-    private Transform highlightedEnemy;
     private bool gameIsPaused = false;
     private CursorLockMode currentCursorLockMode;
 
@@ -72,11 +76,7 @@ public class Player : MonoBehaviour
     
     void Update()
     {
-        if (!gameIsPaused)
-        {
-            PivotCamera();
-        }
-        else
+        if (gameIsPaused)
         {
             isMoving = false;
         }
@@ -106,14 +106,15 @@ public class Player : MonoBehaviour
     private void LateUpdate()
     {
         // Triggering enemy outline
-        if (selectingTarget && Physics.SphereCast(transform.position - (transform.forward * interactHalfWidth), interactHalfWidth, transform.forward, out RaycastHit enemyHit, attackHighlightRange, enemyLayer))
+        Vector3 playerForward = new Vector3(mainCamera.transform.forward.x, 0, mainCamera.transform.forward.z).normalized;
+        if (selectingTarget && Physics.SphereCast(transform.position - (playerForward * interactHalfWidth), interactHalfWidth, playerForward, out RaycastHit enemyHit, attackHighlightRange, enemyLayer))
         {
             enemyHit.transform.GetComponent<Outline>().enabled = true;
             enemyHit.transform.GetComponent<OutlineCanceler>().enabled = true;
         }
 
         // Triggering squad member not in party outline
-        if (Physics.SphereCast(transform.position - (transform.forward * interactHalfWidth), interactHalfWidth, transform.forward,
+        if (Physics.SphereCast(transform.position - (playerForward * interactHalfWidth), interactHalfWidth, playerForward,
                                out RaycastHit memberHit, interactRange, memberLayer))
         {
             if (memberHit.transform.tag == "Untagged")
@@ -128,7 +129,10 @@ public class Player : MonoBehaviour
     private void FixedUpdate()
     {
         if (!gameIsPaused)
+        {
+            PivotCamera();
             MovePlayer();
+        }
     }
 
     private void PivotCamera()
@@ -138,9 +142,10 @@ public class Player : MonoBehaviour
 
         xAxisRotation -= lookY;
         xAxisRotation = Mathf.Clamp(xAxisRotation, bottomCameraMaxAngle, topCameraMaxAngle);
+        yAxisRotation += lookX;
 
-        transform.Rotate(Vector3.up, lookX);
-        cameraArm.transform.localRotation = Quaternion.Euler(Vector3.right * xAxisRotation);
+        Vector3 newRot = Quaternion.Slerp(cameraArm.transform.localRotation, Quaternion.Euler((Vector3.right * xAxisRotation) + (Vector3.up * yAxisRotation)), cameraSmoothing * Time.deltaTime).eulerAngles;
+        cameraArm.transform.localRotation = Quaternion.Euler(newRot);
         mainCamera.transform.LookAt(cameraFocus);
     }
 
@@ -148,8 +153,8 @@ public class Player : MonoBehaviour
     {
         // Remove Y so that when you look up you don't go up into the sky lol
         Vector3 cameraForward =
-            new Vector3(mainCamera.transform.forward.x, 0f, mainCamera.transform.forward.z).normalized;
-        Vector3 cameraRight = mainCamera.transform.right.normalized;
+            new Vector3(mainCamera.transform.forward.x, 0f, mainCamera.transform.forward.z);
+        Vector3 cameraRight = mainCamera.transform.right;
 
         movement = ((cameraForward * inputMoveDirection.z) + (cameraRight * inputMoveDirection.x)) * walkSpeed
             * EnemyBaseManager.Instance.GetMovementSpeedMultiplier() * Time.fixedDeltaTime;
@@ -213,8 +218,16 @@ public class Player : MonoBehaviour
                 // Detect which action is to be executed and to whome (using party position)
                 switch (actionMenu.lastSelectedAction)
                 {
+                    case Actions.NONE:
+                        {
+                            // Remove selected party positions/members after action is none
+                            actionMenu.selectedPartyMembers.Clear();
+                            partyHUD.RemoveAllHUDHighlights();
+                        }
+                        break;
                     case Actions.REMOVEFROMPARTY:
                         {
+                            partyHUD.RemoveAllHUDHighlights();
                             List<int> sortedList = actionMenu.selectedPartyMembers;
                             sortedList.Sort();
                             sortedList.Reverse();
@@ -242,6 +255,7 @@ public class Player : MonoBehaviour
 
                             // Remove selected party positions/members after action is executed
                             actionMenu.selectedPartyMembers.Clear();
+                            partyHUD.RemoveAllHUDHighlights();
                         }
                         break;
                     case Actions.ATTACK:
@@ -257,10 +271,23 @@ public class Player : MonoBehaviour
                             }
 
                             if (allMembersAreOutsideSafeHaven)
+                            {
                                 selectingTarget = true;
+                            }
                             else
+                            {
                                 // Remove selected party positions/members after action is cancelled
                                 actionMenu.selectedPartyMembers.Clear();
+                                partyHUD.RemoveAllHUDHighlights();
+                            }
+                        }
+                        break;
+                    case Actions.TAKECOVER:
+                        {
+                            Debug.Log("Take cover is currently not implemented");
+                            // Remove selected party positions/members after action is none
+                            actionMenu.selectedPartyMembers.Clear();
+                            partyHUD.RemoveAllHUDHighlights();
                         }
                         break;
                 }
@@ -281,10 +308,11 @@ public class Player : MonoBehaviour
     {
         if (!gameIsPaused)
         {
+            Vector3 playerForward = new Vector3(mainCamera.transform.forward.x, 0, mainCamera.transform.forward.z).normalized;
             if (selectingTarget)
             {
                 // Look for enemy
-                if (Physics.SphereCast(transform.position - (transform.forward * interactHalfWidth), interactHalfWidth, transform.forward,
+                if (Physics.SphereCast(transform.position - (playerForward * interactHalfWidth), interactHalfWidth, playerForward,
                                    out RaycastHit hit, attackHighlightRange, enemyLayer))
                 {
                     // Command party members to attack target
@@ -303,11 +331,12 @@ public class Player : MonoBehaviour
 
                 // Remove selected party positions/members after action is executed
                 actionMenu.selectedPartyMembers.Clear();
+                partyHUD.RemoveAllHUDHighlights();
             }
             else
             {
                 // Check for member in-front of player
-                if (Physics.SphereCast(transform.position - (transform.forward * interactHalfWidth), interactHalfWidth, transform.forward,
+                if (Physics.SphereCast(transform.position - (playerForward * interactHalfWidth), interactHalfWidth, playerForward,
                                    out RaycastHit hit, interactRange, memberLayer))
                 {
                     if (hit.transform.TryGetComponent(out SquadMember hitMember))
@@ -383,17 +412,26 @@ public class Player : MonoBehaviour
             && !actionMenu.selectedPartyMembers.Contains(partyPosition))
         {
             actionMenu.selectedPartyMembers.Add(partyPosition);
+            partyHUD.AddHUDHighlight(partyPosition);
         }
         else if (actionMenu.selectedPartyMembers.Contains(partyPosition))
         {
             actionMenu.selectedPartyMembers.Remove(partyPosition);
+            partyHUD.RemoveHUDHighlight(partyPosition);
+            if (actionMenu.selectedPartyMembers.Count <= 0)
+            {
+                actionMenu.transform.Find("Menu Contents").gameObject.SetActive(false);
+                Cursor.lockState = CursorLockMode.Locked;
+                currentCursorLockMode = CursorLockMode.Locked;
+            }
         }
     }
 
     private IEnumerator Attack()
     {
         canAttack = false;
-        
+        isAttacking = true;
+
         // Affect animator
         switch (lastAttack)
         {
@@ -407,16 +445,28 @@ public class Player : MonoBehaviour
                 lastAttack = 2;
                 break;
         }
-        
-        // After attack, allow attacking again after delay (as to not spam the button)
-        yield return new WaitForSeconds(attackDelay);
 
-        weapon.canHit = true;
+        yield return new WaitForSeconds(attackSwingTime);
+
+        foreach(var target in hitTargets)
+        {
+            DealDamage(hitTargets[0]);
+        }
+        if (hitTargets.Count > 0)
+        {
+            hitTargets.RemoveAt(0);
+        }
+
+        // After attack, allow attacking again after delay (as to not spam the button)
+        yield return new WaitForSeconds(attackDelay - attackSwingTime);
+
         canAttack = true;
+        isAttacking = false;
+        hitTargets.Clear();
 
     }
 
-    public void DealDamage(Enemy enemyTarget)
+    private void DealDamage(Enemy enemyTarget)
     {
         enemyTarget.TakeDamage(weaponDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
         Debug.Log("Player attacks " + enemyTarget.gameObject.name + " (-" + weaponDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
@@ -479,6 +529,7 @@ public class Player : MonoBehaviour
         {
             if (member.squadMemberUID == _memberUID)
             {
+                Debug.Log(member.name + " will now attack " + newEnemy.name);
                 member.ChangeAttackTarget(newEnemy);
             }
         }
@@ -536,5 +587,18 @@ public class Player : MonoBehaviour
     public float GetMaxHealth()
     {
         return maxHealth;
+    }
+
+    public void AddHitTarget(Enemy enemy)
+    {
+        if (!hitTargets.Contains(enemy))
+        {
+            hitTargets.Add(enemy);
+        }
+    }
+
+    public bool IsAttacking()
+    {
+        return isAttacking;
     }
 }

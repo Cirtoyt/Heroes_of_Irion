@@ -16,7 +16,8 @@ public class Enemy : MonoBehaviour
     [SerializeField] private EnemyType type;
     [SerializeField] private float sightRange;
     [SerializeField] private float attackRange;
-    [SerializeField] private float timeBetweenAttacks;
+    [SerializeField] private float attackSwingTime;
+    [SerializeField] private float attackDelay;
     [SerializeField] private float attackDamage;
     [SerializeField] private float inCombatRotationSpeed;
     [SerializeField] private List<Transform> patrolPoints;
@@ -74,10 +75,7 @@ public class Enemy : MonoBehaviour
         targetInAttackRange = Physics.CheckSphere(transform.position, attackRange, targetLayers);
 
         // Chase & Attack closest enemy
-        if (targetInSightRange)
-        {
-            GetClosestEnemy();
-        }
+        GetClosestEnemy();
 
         if (targetInSightRange && !targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target)) ChaseEnemy();
         else if (targetInSightRange && targetInAttackRange && TargetIsOutsideSafeHavenAndInParty(target)) AttackEnemy();
@@ -88,15 +86,22 @@ public class Enemy : MonoBehaviour
     {
         Collider[] results = Physics.OverlapSphere(transform.position, sightRange, targetLayers);
 
-        float shortest = Mathf.Infinity;
-        foreach (var result in results)
+        if (results.Length > 0)
         {
-            if ((result.transform.position - transform.position).sqrMagnitude < shortest
-                && TargetIsOutsideSafeHavenAndInParty(result.transform))
+            float shortest = Mathf.Infinity;
+            foreach (var result in results)
             {
-                target = result.transform;
-                shortest = (result.transform.position - transform.position).sqrMagnitude;
+                if ((result.transform.position - transform.position).sqrMagnitude < shortest
+                    && TargetIsOutsideSafeHavenAndInParty(result.transform))
+                {
+                    target = result.transform;
+                    shortest = (result.transform.position - transform.position).sqrMagnitude;
+                }
             }
+        }
+        else
+        {
+            target = null;
         }
     }
 
@@ -209,7 +214,44 @@ public class Enemy : MonoBehaviour
 
         if (!alreadyAttacked)
         {
-            // Attack
+            alreadyAttacked = true;
+            StartCoroutine(nameof(Attack));
+        }
+    }
+
+    private IEnumerator Attack()
+    {
+        if (type == EnemyType.REGULAR)
+        {
+            if (lastAttack == 0 || lastAttack == 2)
+            {
+                anim.SetTrigger("Attack6");
+                lastAttack = 1;
+            }
+            else
+            {
+                anim.SetTrigger("Attack7");
+                lastAttack = 2;
+            }
+        }
+        else
+        {
+            if (lastAttack == 0 || lastAttack == 2)
+            {
+                anim.SetTrigger("Attack4");
+                lastAttack = 1;
+            }
+            else
+            {
+                anim.SetTrigger("Attack5");
+                lastAttack = 2;
+            }
+        }
+
+        yield return new WaitForSeconds(attackSwingTime);
+
+        if (target)
+        {
             if (target.TryGetComponent(out Player playerScript))
             {
                 playerScript.TakeDamage(attackDamage * EnemyBaseManager.Instance.GetIncomingDamageMultiplier());
@@ -218,42 +260,11 @@ public class Enemy : MonoBehaviour
             {
                 squadMemberScript.TakeDamage(attackDamage * EnemyBaseManager.Instance.GetIncomingDamageMultiplier());
             }
-
-            if (type == EnemyType.REGULAR)
-            {
-                if (lastAttack == 0 || lastAttack == 2)
-                {
-                    anim.SetTrigger("Attack6");
-                    lastAttack = 1;
-                }
-                else
-                {
-                    anim.SetTrigger("Attack7");
-                    lastAttack = 2;
-                }
-            }
-            else
-            {
-                if (lastAttack == 0 || lastAttack == 2)
-                {
-                    anim.SetTrigger("Attack4");
-                    lastAttack = 1;
-                }
-                else
-                {
-                    anim.SetTrigger("Attack5");
-                    lastAttack = 2;
-                }
-            }
             Debug.Log(gameObject.name + " attacks " + target.name + " (-" + attackDamage * EnemyBaseManager.Instance.GetIncomingDamageMultiplier() + ")");
-
-            alreadyAttacked = true;
-            Invoke(nameof(ResetAttack), timeBetweenAttacks);
         }
-    }
 
-    private void ResetAttack()
-    {
+        yield return new WaitForSeconds(attackDelay - attackSwingTime);
+
         alreadyAttacked = false;
     }
 

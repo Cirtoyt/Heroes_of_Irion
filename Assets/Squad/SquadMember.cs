@@ -346,7 +346,17 @@ public class SquadMember : MonoBehaviour
                 Vector3 meleePos = closestEnemyFound.position; // + (lookDir * -enemyEngagePosPadding);
                 return meleePos;
             default:
-                return transform.position;
+                {
+                    if (Vector3.Distance(transform.position, closestEnemyFound.position) <= enemyEngagePosPadding)
+                    {
+                        return transform.position;
+                    }
+                    else
+                    {
+                        Vector3 inverseDirection = (transform.position - closestEnemyFound.position).normalized;
+                        return closestEnemyFound.position + (inverseDirection * enemyEngagePosPadding);
+                    }
+                }
         }
     }
 

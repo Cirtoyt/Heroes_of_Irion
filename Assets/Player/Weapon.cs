@@ -4,8 +4,6 @@ using UnityEngine;
 
 public class Weapon : MonoBehaviour
 {
-    [HideInInspector] public bool canHit;
-
     private new Renderer renderer;
     private Player player;
 
@@ -17,8 +15,6 @@ public class Weapon : MonoBehaviour
         {
             player = GetComponentInParent<Player>();
         }
-
-        canHit = false;
     }
 
     public void RevealWeapon()
@@ -34,11 +30,9 @@ public class Weapon : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (player && canHit
-            && other.transform.TryGetComponent(out Enemy enemy))
+        if (player && player.IsAttacking() && other.TryGetComponent(out Enemy enemy))
         {
-            canHit = false;
-            player.DealDamage(enemy);
+            player.AddHitTarget(enemy);
         }
     }
 }
