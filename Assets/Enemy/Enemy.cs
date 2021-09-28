@@ -94,8 +94,23 @@ public class Enemy : MonoBehaviour
                 if ((result.transform.position - transform.position).sqrMagnitude < shortest
                     && TargetIsOutsideSafeHavenAndInParty(result.transform))
                 {
-                    target = result.transform;
-                    shortest = (result.transform.position - transform.position).sqrMagnitude;
+                    if (result.TryGetComponent(out Player player))
+                    {
+                        if (!player.IsDead())
+                        {
+                            target = result.transform;
+                            shortest = (result.transform.position - transform.position).sqrMagnitude;
+                        }
+                        else
+                        {
+                            target = null;
+                        }
+                    }
+                    else // for squad members
+                    {
+                        target = result.transform;
+                        shortest = (result.transform.position - transform.position).sqrMagnitude;
+                    }
                 }
             }
         }

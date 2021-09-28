@@ -51,4 +51,16 @@ public class SpawnGhost : MonoBehaviour
             timerUIText.text = roundDownTimer.ToString();
         }
     }
+
+    public void ForceRespawn()
+    {
+        if (runTimer)
+        {
+            timer = 0;
+            runTimer = false;
+            characterModel.SetActive(false);
+            timerUI.SetActive(false);
+            memberScript.RespawnMember();
+        }
+    }
 }

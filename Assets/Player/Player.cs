@@ -21,6 +21,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float weaponDamage;
     [SerializeField] private Image healthBar;
     [SerializeField] private GameObject pauseMenu;
+    [SerializeField] private GameObject deathMenu;
     [SerializeField] private Transform spawnPoint;
     [Header("Camera")]
     [SerializeField] private Transform cameraArm;
@@ -40,7 +41,6 @@ public class Player : MonoBehaviour
     private PartyManager partyMngr;
     private ActionMenu actionMenu;
     private PartyHUD partyHUD;
-    private Weapon weapon;
     private SphereCollider safeHavenBorder;
 
     private Vector3 inputLookDirection;
@@ -56,6 +56,7 @@ public class Player : MonoBehaviour
     private bool selectingTarget;
     private bool gameIsPaused = false;
     private CursorLockMode currentCursorLockMode;
+    private bool playerIsDead;
 
     void Start()    
     {
@@ -66,9 +67,9 @@ public class Player : MonoBehaviour
         partyMngr = FindObjectOfType<PartyManager>();
         actionMenu = FindObjectOfType<ActionMenu>();
         partyHUD = FindObjectOfType<PartyHUD>();
-        weapon = GetComponentInChildren<Weapon>();
         safeHavenBorder = GameObject.FindGameObjectWithTag("Safe Haven").GetComponent<SphereCollider>();
 
+        deathMenu.SetActive(false);
         Cursor.lockState = CursorLockMode.Locked;
         currentCursorLockMode = CursorLockMode.Locked;
         health = maxHealth;
@@ -378,15 +379,18 @@ public class Player : MonoBehaviour
 
     private void OnOpenClosePauseMenu(InputValue value)
     {
-        if (!gameIsPaused)
+        if (!playerIsDead)
         {
-            gameIsPaused = true;
-            Cursor.lockState = CursorLockMode.Confined;
-            pauseMenu.SetActive(true);
-        }
-        else
-        {
-            ClosePauseMenu();
+            if (!gameIsPaused)
+            {
+                gameIsPaused = true;
+                Cursor.lockState = CursorLockMode.Confined;
+                pauseMenu.SetActive(true);
+            }
+            else
+            {
+                ClosePauseMenu();
+            }
         }
     }
 
@@ -538,13 +542,29 @@ public class Player : MonoBehaviour
     private void KillPlayer()
     {
         // Player anim plays death animation/particle effect
-        // Non-UI input is frozen
-        // Display dead menu
-        //Time.timeScale = 0;
-
+        if (gameIsPaused)
+        {
+            ClosePauseMenu();
+        }
+        gameIsPaused = true;
+        playerIsDead = true;
+        Cursor.lockState = CursorLockMode.Confined;
+        deathMenu.SetActive(true);
         Debug.Log("Player has been defeated");
 
-        RespawnPlayer();
+        // Freeze party members
+        SquadMember[] members = FindObjectsOfType<SquadMember>();
+        foreach (var memberID in partyMngr.partyMembers)
+        {
+            foreach (SquadMember member in members)
+            {
+                if (member.squadMemberUID == memberID)
+                {
+                    Debug.Log(member.name);
+                    member.DeathScreenFreezeMember();
+                }
+            }
+        }
     }
 
     public void RespawnPlayer()
@@ -553,6 +573,33 @@ public class Player : MonoBehaviour
         transform.rotation = spawnPoint.rotation;
         health = maxHealth;
         StartCoroutine(partyHUD.SmoothBarUI(healthBar, health, maxHealth));
+
+        // Respawn all party members & remove cooldown delay (reset party members) for instantly rebeginning gameplay
+        SquadMember[] members = FindObjectsOfType<SquadMember>();
+        List<int> preRespawningPartyList = new List<int>(partyMngr.partyMembers);
+        foreach (var memberID in preRespawningPartyList)
+        {
+            foreach (SquadMember member in members)
+            {
+                if (member.squadMemberUID == memberID)
+                {
+                    member.DeathScreenResetMember();
+                }
+            }
+        }
+        SpawnGhost[] spawnGhosts = FindObjectsOfType<SpawnGhost>();
+        foreach (SpawnGhost ghostScript in spawnGhosts)
+        {
+            ghostScript.ForceRespawn();
+        }
+
+        gameIsPaused = false;
+        playerIsDead = false;
+        if (currentCursorLockMode == CursorLockMode.Locked)
+            Cursor.lockState = CursorLockMode.Locked;
+        else if (currentCursorLockMode == CursorLockMode.Confined)
+            Cursor.lockState = CursorLockMode.Confined;
+        deathMenu.SetActive(false);
     }
 
     public void TakeDamage(float _Damage)
@@ -600,5 +647,10 @@ public class Player : MonoBehaviour
     public bool IsAttacking()
     {
         return isAttacking;
+    }
+
+    public bool IsDead()
+    {
+        return playerIsDead;
     }
 }

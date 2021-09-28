@@ -590,7 +590,7 @@ public class SquadMember : MonoBehaviour
                         playerIsLowest = true;
                     }
 
-                    if (playerIsLowest && playerScript.GetHealth() < playerScript.GetMaxHealth())
+                    if (!playerScript.IsDead() && playerIsLowest && playerScript.GetHealth() < playerScript.GetMaxHealth())
                     {
                         anim.SetFloat("AttackSpeed", healerCastSpeed);
                         anim.SetTrigger("Attack3");
@@ -612,13 +612,16 @@ public class SquadMember : MonoBehaviour
 
                         yield return new WaitForSeconds(healerHealAirTime);
 
-                        float oldHealth = weakestSM.GetHealth();
+                        if (partyMngr.partyMembers.Contains(weakestSM.squadMemberUID))
+                        {
+                            float oldHealth = weakestSM.GetHealth();
 
-                        weakestSM.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
+                            weakestSM.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
 
-                        float healingDone = weakestSM.GetHealth() - oldHealth;
-                        Debug.Log(gameObject.name + " heals " + weakestSM.gameObject.name +
-                                  " (+" + healingDone + ")");
+                            float healingDone = weakestSM.GetHealth() - oldHealth;
+                            Debug.Log(gameObject.name + " heals " + weakestSM.gameObject.name +
+                                      " (+" + healingDone + ")");
+                        }
                     }
                     yield return new WaitForSeconds(healerHealDelay - healerHealAirTime);
                     break;
@@ -733,6 +736,26 @@ public class SquadMember : MonoBehaviour
         gameObject.layer = LayerMask.NameToLayer("Member");
         BeginSearchingForEnemies();
         characterModel.SetActive(true);
+    }
+
+    public void DeathScreenFreezeMember()
+    {
+        tag = "Untagged";
+        state = States.IDLE;
+        closestEnemyFound = null;
+        StopFollowing();
+    }
+
+    public void DeathScreenResetMember()
+    {
+        transform.position = spawnPoint.position;
+        transform.rotation = spawnPoint.rotation;
+        partyMngr.RemoveMemberFromParty(squadMemberUID);
+        // Remove HUD display on reset
+        partyHUD.UpdateHUD(4);
+        partyHUD.UpdateHUD(3);
+        partyHUD.UpdateHUD(2);
+        partyHUD.UpdateHUD(1);
     }
 
     public void HealHealth(float _amount)
