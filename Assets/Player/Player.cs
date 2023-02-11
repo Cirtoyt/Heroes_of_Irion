@@ -190,8 +190,15 @@ public class Player : MonoBehaviour
 
     private void OnLook(InputValue value)
     {
-        Vector2 inputLook = value.Get<Vector2>();
-        inputLookDirection = new Vector3(inputLook.x, inputLook.y, 0);
+        if (!actionMenu.transform.Find("Menu Contents").gameObject.activeInHierarchy)
+        {
+            Vector2 inputLook = value.Get<Vector2>();
+            inputLookDirection = new Vector3(inputLook.x, inputLook.y, 0);
+        }
+        else
+        {
+            inputLookDirection = Vector3.zero;
+        }
     }
 
     private void OnMovement(InputValue value)
@@ -291,6 +298,14 @@ public class Player : MonoBehaviour
                             partyHUD.RemoveAllHUDHighlights();
                         }
                         break;
+                    case Actions.STATS:
+                        {
+                            Debug.Log("Character stats is currently not implemented");
+                            // Remove selected party positions/members after action is none
+                            actionMenu.selectedPartyMembers.Clear();
+                            partyHUD.RemoveAllHUDHighlights();
+                        }
+                        break;
                 }
             }
             // else if any other menu is open
@@ -383,6 +398,15 @@ public class Player : MonoBehaviour
         {
             if (!gameIsPaused)
             {
+                // Close ring action menu
+                actionMenu.transform.Find("Menu Contents").gameObject.SetActive(false);
+                Cursor.lockState = CursorLockMode.Locked;
+                currentCursorLockMode = CursorLockMode.Locked;
+
+                partyHUD.RemoveAllHUDHighlights();
+                actionMenu.selectedPartyMembers.Clear();
+
+                // Pause game and open pause menu
                 gameIsPaused = true;
                 Cursor.lockState = CursorLockMode.Confined;
                 pauseMenu.SetActive(true);

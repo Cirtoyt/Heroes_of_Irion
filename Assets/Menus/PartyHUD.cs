@@ -7,7 +7,7 @@ public class PartyHUD : MonoBehaviour
 {
     [SerializeField] private float smoothSpeed = 0.2f;
     [SerializeField] List<GameObject> partyMemberHUDS;
-    [SerializeField] List<Sprite> avatars;
+    [SerializeField] public List<Sprite> avatars;
 
     private PartyManager partyManager;
 
@@ -42,7 +42,7 @@ public class PartyHUD : MonoBehaviour
             SquadMember member = partyManager.GetSquadMemberFromPositionInParty(partyPosition);
 
             // Set avatar
-            Image avatar = partyMemberHUDS[partyPosition].transform.Find("Avatar Image").GetComponent<Image>();
+            Image avatar = partyMemberHUDS[partyPosition].transform.Find("Avatar Image Mask").Find("Avatar Image").GetComponent<Image>();
             avatar.sprite = avatars[member.squadMemberUID];
             avatar.color = new Color(1, 1, 1, 1);
 

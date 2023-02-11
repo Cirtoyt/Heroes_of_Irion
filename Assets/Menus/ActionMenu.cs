@@ -6,8 +6,8 @@ using UnityEngine.UI;
 public class ActionMenu : MonoBehaviour
 {
     [SerializeField] private GameObject actionTitle;
-    [SerializeField] private GameObject characterImage;
-    [SerializeField] private GameObject characterTitle;
+    [SerializeField] private List<GameObject> characterImageHolders;
+    [SerializeField] private List<Image> characterImages;
     [SerializeField] private GameObject[] menuOptions;
 
     public List<int> selectedPartyMembers;
@@ -15,6 +15,7 @@ public class ActionMenu : MonoBehaviour
 
     private Player player;
     private PartyManager partyMngr;
+    private PartyHUD partyHUD;
     private SphereCollider safeHavenBorder;
 
     private Vector2 normCursorPos;
@@ -27,6 +28,7 @@ public class ActionMenu : MonoBehaviour
         selectedPartyMembers = new List<int>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<Player>();
         partyMngr = FindObjectOfType<PartyManager>();
+        partyHUD = FindObjectOfType<PartyHUD>();
         safeHavenBorder = GameObject.FindGameObjectWithTag("Safe Haven").GetComponent<SphereCollider>();
     }
     
@@ -34,6 +36,24 @@ public class ActionMenu : MonoBehaviour
     {
         if (transform.Find("Menu Contents").gameObject.activeInHierarchy)
         {
+            // Visualise currently selected party member avatars
+            for (int i = 0; i < characterImageHolders.Count; i++)
+            {
+                if (i < selectedPartyMembers.Count)
+                {
+                    SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(selectedPartyMembers[i]);
+
+                    characterImageHolders[i].SetActive(true);
+                    characterImages[i].sprite = partyHUD.avatars[member.squadMemberUID];
+                    characterImages[i].color = Color.white;
+                }
+                else
+                {
+                    characterImageHolders[i].SetActive(false);
+                    characterImages[i].sprite = null;
+                }
+            }
+
             // Get current selection
             normCursorPos = new Vector2(player.UIMousePos.x - Screen.width / 2,
                                        player.UIMousePos.y - Screen.height / 2);
