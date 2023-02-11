@@ -42,6 +42,7 @@ public class Player : MonoBehaviour
     private ActionMenu actionMenu;
     private PartyHUD partyHUD;
     private SphereCollider safeHavenBorder;
+    private ObjectivesMenuHandler objectivesMenuHandler;
 
     private Vector3 inputLookDirection;
     private float xAxisRotation;
@@ -68,6 +69,7 @@ public class Player : MonoBehaviour
         actionMenu = FindObjectOfType<ActionMenu>();
         partyHUD = FindObjectOfType<PartyHUD>();
         safeHavenBorder = GameObject.FindGameObjectWithTag("Safe Haven").GetComponent<SphereCollider>();
+        objectivesMenuHandler = FindObjectOfType<ObjectivesMenuHandler>();
 
         deathMenu.SetActive(false);
         Cursor.lockState = CursorLockMode.Locked;
@@ -416,6 +418,11 @@ public class Player : MonoBehaviour
                 ClosePauseMenu();
             }
         }
+    }
+
+    private void OnOpenCloseObjectivesMenu(InputValue value)
+    {
+        objectivesMenuHandler.ToggleOpenCloseMenu();
     }
 
     public void ClosePauseMenu()

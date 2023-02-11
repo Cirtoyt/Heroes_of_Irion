@@ -1,0 +1,10 @@
+TODO:
+- Add latest character images to player HUD
+- Decide what to do with take cover party member action
+    Or something else?
+- Decide what to do with character stats party member action
+    Will I have a character UI with stats you can upgrade when the character is back at camp?
+    Or something else?
+- Add visualisation to damage between party members and enemies
+    Add a message log in the bottom left
+    Add on-screen floating damage numbers

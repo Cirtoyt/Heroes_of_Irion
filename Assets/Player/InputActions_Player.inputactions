@@ -84,6 +84,14 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
+                },
+                {
+                    "name": "Open Close Objectives Menu",
+                    "type": "Button",
+                    "id": "db3941b8-5991-4ab1-8038-24a5c7b93cc6",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
                 }
             ],
             "bindings": [
@@ -238,6 +246,17 @@
                     "processors": "",
                     "groups": "Keyboard & Mouse",
                     "action": "Open Close Pause Menu",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9dae7234-ad7a-4fff-9631-c94f1e09268a",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard & Mouse",
+                    "action": "Open Close Objectives Menu",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
