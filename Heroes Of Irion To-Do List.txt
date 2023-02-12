@@ -1,22 +1,21 @@
 TODO:
 - Add latest character images to player HUD
-- Decide what to do with take cover party member action
-    Or something else?
-      Focus on large enemies or on nearest!! (code is in CheckForEnemyPresence)
 - Decide what to do with character stats party member action
-    Will I have a character UI with stats you can upgrade when the character is back at camp?
-      Weapon damage?
-      Health max?
-      Movement speed?
-        Movement & Attack combo speed stat?
-      Maybe have upgrade station back at camp?
     Or something else?
-    Swap class system (2 classes per character and swapping of weapons visible)?
-      Much more doable than UI and character upgrading!
+      Swap class system (2 classes per character and swapping of weapons visible)?
+- Fix issue where squad member gets stuck running and pushed around by enemies!
+- Add death animation on death?
+- End-game screen!
 - Sound effects
     Hitting enemies
     Healing
     Open/close menu
     Walking
+- Character upgrading station (in camp, anvil or something)
+    Character UI with stats you can upgrade when the character is back at camp
+      Stats that could be upgraded:
+        Weapon damage?
+        Health max?
+        Movement speed?
+          Movement & Attack combo speed stat?
 - Add controller input support
-- End-game screen!

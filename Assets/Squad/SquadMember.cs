@@ -92,6 +92,7 @@ public class SquadMember : MonoBehaviour
     private States preCombatState;
     private int lastAttack;
     private bool regrouping;
+    private bool prioritiseLargeEnemies = false;
 
     void Awake()
     {
@@ -385,20 +386,23 @@ public class SquadMember : MonoBehaviour
                     }
                 }
 
-                // Go through list of enemies again, then prioritise the closest large enemy instead, ignorning regular if large is present
-                /*float minLargeDist = Mathf.Infinity;
-                foreach (Collider enemy in enemies)
+                if (prioritiseLargeEnemies)
                 {
-                    if (enemy.GetComponent<Enemy>().GetEnemyType() == Enemy.EnemyType.LARGE)
+                    // Go through list of enemies again, then prioritise the closest large enemy instead, ignorning regular if large is present
+                    float minLargeDist = Mathf.Infinity;
+                    foreach (Collider enemy in enemies)
                     {
-                        float dist = Vector3.Distance(enemy.transform.position, transform.position);
-                        if (dist < minLargeDist)
+                        if (enemy.GetComponent<Enemy>().GetEnemyType() == Enemy.EnemyType.LARGE)
                         {
-                            minLargeDist = dist;
-                            closestEnemyFound = enemy.transform;
+                            float dist = Vector3.Distance(enemy.transform.position, transform.position);
+                            if (dist < minLargeDist)
+                            {
+                                minLargeDist = dist;
+                                closestEnemyFound = enemy.transform;
+                            }
                         }
                     }
-                }*/
+                }
             }
             else
             {
@@ -688,7 +692,7 @@ public class SquadMember : MonoBehaviour
             HealingSpellEffect healingSpellEffect = Instantiate(healingSpellEffectPrefab, staffTip.position, Quaternion.identity);
             healingSpellEffect.name = healingSpellEffectPrefab.name;
             healingSpellEffect.target = weakestSM.transform;
-            healingSpellEffect.flySpeed = (Vector3.Distance(staffTip.position, weakestSM.transform.position + (Vector3.up * 0.5f)) / 0.5f) * 0.1f;
+            healingSpellEffect.flySpeed = (Vector3.Distance(staffTip.position, weakestSM.transform.position + (Vector3.up * 0.5f)) / healerHealAirTime) * 1.1f;
 
             yield return new WaitForSeconds(healerHealAirTime);
 
@@ -846,6 +850,16 @@ public class SquadMember : MonoBehaviour
         {
             health = maxHealth;
         }
+    }
+
+    public void TogglePrioritiseLargeEnemies()
+    {
+        prioritiseLargeEnemies = !prioritiseLargeEnemies;
+    }
+
+    public bool GetIsPrioritisingLargeEnememies()
+    {
+        return prioritiseLargeEnemies;
     }
 
     private void DrawCircle(Vector3 center, float radius, Color color)

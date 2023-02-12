@@ -143,6 +143,30 @@ public class ActionMenu : MonoBehaviour
                         lastSelectedAction = Actions.NONE;
                     }
                 }
+                else if (optionScript.GetActionType() == Actions.PRIORITISELARGEENEMIES)
+                {
+                    if (anyMembersAreHealers)
+                    {
+                        optionScript.Dim();
+                        if (lastSelectedAction == Actions.PRIORITISELARGEENEMIES)
+                        {
+                            lastSelectedAction = Actions.NONE;
+                        }
+                    }
+                    else
+                    {
+                        optionScript.UnDim();
+                        if (selectedPartyMembers.Count > 1)
+                        {
+                            optionScript.ForceToggleIconsUndim();
+                        }
+                        else if (selectedPartyMembers.Count == 1)
+                        {
+                            SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(selectedPartyMembers[0]);
+                            optionScript.ToggleIcon(member.GetIsPrioritisingLargeEnememies());
+                        }
+                    }
+                }
                 else
                 {
                     optionScript.UnDim();

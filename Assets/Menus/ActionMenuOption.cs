@@ -7,7 +7,7 @@ public enum Actions
 {
     ATTACK,
     REMOVEFROMPARTY,
-    TAKECOVER,
+    PRIORITISELARGEENEMIES,
     REGROUP,
     STATS,
     NONE,
@@ -23,9 +23,12 @@ public class ActionMenuOption : MonoBehaviour
     [SerializeField] private float darkenAmount;
     [SerializeField] private Image background;
     [SerializeField] private Image icon;
+    [SerializeField] private Image icon2;
+    [SerializeField] private Image linkImage;
 
     private Color darkBaseColour;
     private Color darkHoverColour;
+    private bool isOption1Selected = true;
 
     private void Awake()
     {
@@ -50,6 +53,35 @@ public class ActionMenuOption : MonoBehaviour
     public void Deselect()
     {
         background.color = baseColour;
+    }
+
+    public void ToggleIcon(bool isOption1)
+    {
+        isOption1Selected = isOption1;
+        UpdateToggleIconDims();
+    }
+
+    private void UpdateToggleIconDims()
+    {
+        if (isOption1Selected)
+        {
+            icon.color = new Color(1, 1, 1, 1f);
+            if (icon2) icon2.color = new Color(1, 1, 1, 0.3f);
+            if (linkImage) linkImage.color = new Color(1, 1, 1, 1f);
+        }
+        else
+        {
+            icon.color = new Color(1, 1, 1, 0.3f);
+            if (icon2) icon2.color = new Color(1, 1, 1, 1f);
+            if (linkImage) linkImage.color = new Color(1, 1, 1, 1f);
+        }
+    }
+
+    public void ForceToggleIconsUndim()
+    {
+        icon.color = new Color(1, 1, 1, 1f);
+        if (icon2) icon2.color = new Color(1, 1, 1, 1f);
+        if (linkImage) linkImage.color = new Color(1, 1, 1, 1f);
     }
 
     private void UpdateDarkColours()
@@ -78,6 +110,8 @@ public class ActionMenuOption : MonoBehaviour
         }
 
         icon.color = new Color(1, 1, 1, 0.3f);
+        if (icon2) icon2.color = new Color(1, 1, 1, 0.3f);
+        if (linkImage) linkImage.color = new Color(1, 1, 1, 0.3f);
     }
 
     public void UnDim()
@@ -91,6 +125,13 @@ public class ActionMenuOption : MonoBehaviour
             background.color = hoverColour;
         }
 
-        icon.color = new Color(1, 1, 1, 1);
+        if (icon && icon2)
+        {
+            UpdateToggleIconDims();
+        }
+        else
+        {
+            icon.color = new Color(1, 1, 1, 1);
+        }
     }
 }

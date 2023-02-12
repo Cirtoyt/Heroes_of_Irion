@@ -292,10 +292,15 @@ public class Player : MonoBehaviour
                             }
                         }
                         break;
-                    case Actions.TAKECOVER:
+                    case Actions.PRIORITISELARGEENEMIES:
                         {
-                            Debug.Log("Take cover is currently not implemented");
-                            // Remove selected party positions/members after action is none
+                            foreach (int partyPos in actionMenu.selectedPartyMembers)
+                            {
+                                SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(partyPos);
+                                member.TogglePrioritiseLargeEnemies();
+                            }
+
+                            // Remove selected party positions/members after action is executed
                             actionMenu.selectedPartyMembers.Clear();
                             partyHUD.RemoveAllHUDHighlights();
                         }
@@ -483,20 +488,22 @@ public class Player : MonoBehaviour
 
         yield return new WaitForSeconds(attackSwingTime);
 
-        // Only deal damage ot the two closest targets, otherwise you can group hit 4-5 enemies at once if they are all huddled together
+        // Only deal damage to the two closest targets, otherwise you can group hit 4-5 enemies at once if they are all huddled together
         Enemy closestTarget = null;
         Enemy secondClosestTarget = null;
         float closestEnemyDistance = float.MaxValue;
         foreach(Enemy target in hitTargets)
         {
-            float distanceFromPlayer = Vector3.Distance(transform.position, target.transform.position);
-            if (distanceFromPlayer < closestEnemyDistance)
+            if (target)
             {
-                secondClosestTarget = closestTarget;
-                closestTarget = target;
-                closestEnemyDistance = distanceFromPlayer;
+                float distanceFromPlayer = Vector3.Distance(transform.position, target.transform.position);
+                if (distanceFromPlayer < closestEnemyDistance)
+                {
+                    secondClosestTarget = closestTarget;
+                    closestTarget = target;
+                    closestEnemyDistance = distanceFromPlayer;
+                }
             }
-            
         }
 
         if (secondClosestTarget) DealDamage(secondClosestTarget);
