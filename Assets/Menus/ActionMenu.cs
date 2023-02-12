@@ -104,6 +104,16 @@ public class ActionMenu : MonoBehaviour
                 }
             }
 
+            // Check if any characters are healers
+            bool anyMembersAreHealers = false;
+            foreach (int partyPos in selectedPartyMembers)
+            {
+                SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(partyPos);
+                if (member.squadMemberClass == SquadMember.Classes.Healer)
+                    anyMembersAreHealers = true;
+            }
+
+
             // Make certain UI options dim or not
             foreach (GameObject option in menuOptions)
             {
@@ -125,9 +135,13 @@ public class ActionMenu : MonoBehaviour
                         lastSelectedAction = Actions.NONE;
                     }
                 }
-                else if (!allMembersAreOutsideSafeHaven && optionScript.GetActionType() == Actions.ATTACK)
+                else if ((!allMembersAreOutsideSafeHaven || anyMembersAreHealers) && optionScript.GetActionType() == Actions.ATTACK)
                 {
                     optionScript.Dim();
+                    if (lastSelectedAction == Actions.ATTACK)
+                    {
+                        lastSelectedAction = Actions.NONE;
+                    }
                 }
                 else
                 {

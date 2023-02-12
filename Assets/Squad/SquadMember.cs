@@ -318,9 +318,9 @@ public class SquadMember : MonoBehaviour
             // No target found
             if (!closestEnemyFound)
             {
-                if (preCombatState == States.CASUALFOLLOWING)
+                if (preCombatState == States.CASUALFOLLOWING || preCombatState == States.CHASING || preCombatState == States.INCOMBAT)
                 {
-                    state = preCombatState;
+                    state = States.CASUALFOLLOWING;
                     BeginFollowing();
                     BeginSearchingForEnemies();
                 }

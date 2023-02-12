@@ -13,14 +13,10 @@ TODO:
     Or something else?
     Swap class system (2 classes per character and swapping of weapons visible)?
       Much more doable than UI and character upgrading!
-- Add visualisation to damage between party members and enemies
-    Add a message log in the bottom left (DONE!)
-    Add on-screen floating damage numbers (DONE!)
 - Sound effects
     Hitting enemies
     Healing
     Open/close menu
     Walking
-- Fix healing not occuring outside combat
 - Add controller input support
 - End-game screen!
