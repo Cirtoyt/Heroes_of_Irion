@@ -42,6 +42,8 @@ public class SquadMember : MonoBehaviour
     [SerializeField] private Transform spawnPoint;
     [SerializeField] private SpawnGhost spawnGhostScript;
     [SerializeField] private bool showDubugGizmos;
+    [SerializeField] private Transform staffTip;
+    [SerializeField] private HealingSpellEffect healingSpellEffectPrefab;
 
     private Rigidbody rb;
     private GameObject characterModel;
@@ -143,11 +145,14 @@ public class SquadMember : MonoBehaviour
                     {
                         ColumnFormation();
                     }
+
+                    ProcessHealerClass(); // So healer can heal outside combat
                 }
                 break;
             case States.INCOMBAT:
                 {
                     InCombat();
+                    ProcessHealerClass();
                 }
                 break;
             case States.CHASING:
@@ -614,64 +619,91 @@ public class SquadMember : MonoBehaviour
                     yield return new WaitForSeconds(sorcererAttackDelay - sorcererAttackAirTime);
                     break;
                 }
-            case Classes.Healer:
-                {
-                    SquadMember weakestSM = this;
-                    float lowestHealth = Mathf.Infinity;
-                    SquadMember[] members = FindObjectsOfType<SquadMember>();
-                    foreach (SquadMember member in members)
-                    {
-                        if (partyMngr.GetPositionInParty(member.squadMemberUID) != -1 &&
-                            member.GetHealth() < lowestHealth)
-                        {
-                            weakestSM = member;
-                            lowestHealth = member.GetHealth();
-                        }
-                    }
-
-                    bool playerIsLowest = false;
-                    if (playerScript.GetHealth() < lowestHealth)
-                    {
-                        playerIsLowest = true;
-                    }
-
-                    if (!playerScript.IsDead() && playerIsLowest && playerScript.GetHealth() < playerScript.GetMaxHealth())
-                    {
-                        anim.SetFloat("AttackSpeed", healerCastSpeed);
-                        anim.SetTrigger("Attack3");
-
-                        yield return new WaitForSeconds(healerHealAirTime);
-
-                        float oldHealth = playerScript.GetHealth();
-
-                        playerScript.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
-
-                        float healingDone = weakestSM.GetHealth() - oldHealth;
-                        CombatLogManager.Instance.PrintHealLog(gameObject.name, true, "Alex", true, healingDone);
-                        CombatParticleVisualiser.Instance.SpawnHealingParticleEffects(playerScript.transform.position + (Vector3.up * 0.5f), healingDone);
-                    }
-                    else if (weakestSM.GetHealth() < weakestSM.GetMaxHealth())
-                    {
-                        anim.SetFloat("AttackSpeed", sorcererCastSpeed);
-                        anim.SetTrigger("Attack3");
-
-                        yield return new WaitForSeconds(healerHealAirTime);
-
-                        if (partyMngr.partyMembers.Contains(weakestSM.squadMemberUID))
-                        {
-                            float oldHealth = weakestSM.GetHealth();
-
-                            weakestSM.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
-
-                            float healingDone = weakestSM.GetHealth() - oldHealth;
-                            CombatLogManager.Instance.PrintHealLog(gameObject.name, true, weakestSM.gameObject.name, true, healingDone);
-                            CombatParticleVisualiser.Instance.SpawnHealingParticleEffects(weakestSM.transform.position + (Vector3.up * 0.5f), healingDone);
-                        }
-                    }
-                    yield return new WaitForSeconds(healerHealDelay - healerHealAirTime);
-                    break;
-                }
+            default:
+                break;
         }
+
+        canAttack = true;
+    }
+
+    private void ProcessHealerClass()
+    {
+        if (squadMemberClass == Classes.Healer)
+        {
+            if (canAttack)
+            {
+                // Attack
+                canAttack = false;
+                StartCoroutine(CastHealing());
+            }
+        }
+    }
+
+    private IEnumerator CastHealing()
+    {
+        SquadMember weakestSM = this;
+        float lowestHealth = Mathf.Infinity;
+        SquadMember[] members = FindObjectsOfType<SquadMember>();
+        foreach (SquadMember member in members)
+        {
+            if (partyMngr.GetPositionInParty(member.squadMemberUID) != -1 &&
+                member.GetHealth() < lowestHealth)
+            {
+                weakestSM = member;
+                lowestHealth = member.GetHealth();
+            }
+        }
+
+        bool playerIsLowest = false;
+        if (playerScript.GetHealth() < lowestHealth)
+        {
+            playerIsLowest = true;
+        }
+
+        if (!playerScript.IsDead() && playerIsLowest && playerScript.GetHealth() < playerScript.GetMaxHealth())
+        {
+            anim.SetFloat("AttackSpeed", healerCastSpeed);
+            anim.SetTrigger("Attack3");
+
+            HealingSpellEffect healingSpellEffect = Instantiate(healingSpellEffectPrefab, staffTip.position, Quaternion.identity);
+            healingSpellEffect.name = healingSpellEffectPrefab.name;
+            healingSpellEffect.target = player.transform;
+            healingSpellEffect.flySpeed = (Vector3.Distance(staffTip.position, player.position + (Vector3.up * 0.5f)) / healerHealAirTime) * 1.1f;
+
+            yield return new WaitForSeconds(healerHealAirTime);
+
+            float oldHealth = playerScript.GetHealth();
+
+            playerScript.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
+
+            float healingDone = weakestSM.GetHealth() - oldHealth;
+            CombatLogManager.Instance.PrintHealLog(gameObject.name, true, "Alex", true, healingDone);
+            CombatParticleVisualiser.Instance.SpawnHealingParticleEffects(playerScript.transform.position + (Vector3.up * 0.5f), healingDone);
+        }
+        else if (weakestSM.GetHealth() < weakestSM.GetMaxHealth())
+        {
+            anim.SetFloat("AttackSpeed", sorcererCastSpeed);
+            anim.SetTrigger("Attack3");
+
+            HealingSpellEffect healingSpellEffect = Instantiate(healingSpellEffectPrefab, staffTip.position, Quaternion.identity);
+            healingSpellEffect.name = healingSpellEffectPrefab.name;
+            healingSpellEffect.target = weakestSM.transform;
+            healingSpellEffect.flySpeed = (Vector3.Distance(staffTip.position, weakestSM.transform.position + (Vector3.up * 0.5f)) / 0.5f) * 0.1f;
+
+            yield return new WaitForSeconds(healerHealAirTime);
+
+            if (partyMngr.partyMembers.Contains(weakestSM.squadMemberUID))
+            {
+                float oldHealth = weakestSM.GetHealth();
+
+                weakestSM.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
+
+                float healingDone = weakestSM.GetHealth() - oldHealth;
+                CombatLogManager.Instance.PrintHealLog(gameObject.name, true, weakestSM.gameObject.name, true, healingDone);
+                CombatParticleVisualiser.Instance.SpawnHealingParticleEffects(weakestSM.transform.position + (Vector3.up * 0.5f), healingDone);
+            }
+        }
+        yield return new WaitForSeconds(healerHealDelay - healerHealAirTime);
 
         canAttack = true;
     }

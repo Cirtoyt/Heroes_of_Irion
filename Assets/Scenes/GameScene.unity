@@ -73500,6 +73500,8 @@ MonoBehaviour:
   spawnPoint: {fileID: 715776381}
   spawnGhostScript: {fileID: 1400211099}
   showDubugGizmos: 0
+  staffTip: {fileID: 7490667773106937843}
+  healingSpellEffectPrefab: {fileID: 3931747492485114631, guid: 07bf5e5c83a85e945936e180abb03948, type: 3}
   closestEnemyFound: {fileID: 0}
   canAttack: 0
 --- !u!195 &7490667773655298734
@@ -74034,6 +74036,8 @@ MonoBehaviour:
   spawnPoint: {fileID: 1946383041}
   spawnGhostScript: {fileID: 2124042953}
   showDubugGizmos: 0
+  staffTip: {fileID: 0}
+  healingSpellEffectPrefab: {fileID: 0}
   closestEnemyFound: {fileID: 0}
   canAttack: 0
 --- !u!208 &7490667773698961953
@@ -77641,7 +77645,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   walkSpeed: 7
-  maxHealth: 10000
+  maxHealth: 100
   interactRange: 4
   interactHalfWidth: 1.5
   attackHighlightRange: 20
@@ -77949,6 +77953,8 @@ MonoBehaviour:
   spawnPoint: {fileID: 3229735153065124456}
   spawnGhostScript: {fileID: 2084404455}
   showDubugGizmos: 0
+  staffTip: {fileID: 0}
+  healingSpellEffectPrefab: {fileID: 0}
   closestEnemyFound: {fileID: 0}
   canAttack: 0
 --- !u!136 &7490667774255071808
@@ -79840,6 +79846,8 @@ MonoBehaviour:
   spawnPoint: {fileID: 26037050}
   spawnGhostScript: {fileID: 233525126}
   showDubugGizmos: 0
+  staffTip: {fileID: 0}
+  healingSpellEffectPrefab: {fileID: 0}
   closestEnemyFound: {fileID: 0}
   canAttack: 0
 --- !u!208 &7490667774547679239
