@@ -483,14 +483,24 @@ public class Player : MonoBehaviour
 
         yield return new WaitForSeconds(attackSwingTime);
 
-        foreach(var target in hitTargets)
+        // Only deal damage ot the two closest targets, otherwise you can group hit 4-5 enemies at once if they are all huddled together
+        Enemy closestTarget = null;
+        Enemy secondClosestTarget = null;
+        float closestEnemyDistance = float.MaxValue;
+        foreach(Enemy target in hitTargets)
         {
-            DealDamage(hitTargets[0]);
+            float distanceFromPlayer = Vector3.Distance(transform.position, target.transform.position);
+            if (distanceFromPlayer < closestEnemyDistance)
+            {
+                secondClosestTarget = closestTarget;
+                closestTarget = target;
+                closestEnemyDistance = distanceFromPlayer;
+            }
+            
         }
-        if (hitTargets.Count > 0)
-        {
-            hitTargets.RemoveAt(0);
-        }
+
+        if (secondClosestTarget) DealDamage(secondClosestTarget);
+        if (closestTarget) DealDamage(closestTarget);
 
         // After attack, allow attacking again after delay (as to not spam the button)
         yield return new WaitForSeconds(attackDelay - attackSwingTime);
@@ -503,8 +513,18 @@ public class Player : MonoBehaviour
 
     private void DealDamage(Enemy enemyTarget)
     {
-        enemyTarget.TakeDamage(weaponDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
-        Debug.Log("Player attacks " + enemyTarget.gameObject.name + " (-" + weaponDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
+        float damage = weaponDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier();
+        enemyTarget.TakeDamage(damage);
+        CombatLogManager.Instance.PrintAttackLog("Alex", true, enemyTarget.gameObject.name, false, damage);
+
+        float heightHitOffset = 0.5f;
+        float scaleOffset = 0.5f;
+        if (enemyTarget.GetEnemyType() == Enemy.EnemyType.LARGE)
+        {
+            heightHitOffset = 1f;
+            scaleOffset = 1f;
+        }
+        CombatParticleVisualiser.Instance.SpawnDamageParticleEffects(enemyTarget.transform.position + (Vector3.up * heightHitOffset), damage, scaleOffset);
     }
 
     private void RemovePartyMember(int _memberUID)
@@ -520,7 +540,7 @@ public class Player : MonoBehaviour
                 member.SwitchState(SquadMember.States.IDLE);
                 member.StepBack();
                 member.gameObject.tag = "Untagged";
-                Debug.Log(member.name + " has been removed from the party");
+                CombatLogManager.Instance.PrintRemovedToPartyLog(member.name);
             }
         }
     }
@@ -539,7 +559,7 @@ public class Player : MonoBehaviour
             member.BeginFollowing();
         }
 
-        Debug.Log(_member.name + " has been added to the party");
+        CombatLogManager.Instance.PrintAddedToPartyLog(_member.name);
     }
 
     private void RegroupPartyMember(int _memberUID)
@@ -564,7 +584,7 @@ public class Player : MonoBehaviour
         {
             if (member.squadMemberUID == _memberUID)
             {
-                Debug.Log(member.name + " will now attack " + newEnemy.name);
+                CombatLogManager.Instance.PrintTargetNewEnemyLog(member.name, newEnemy.name);
                 member.ChangeAttackTarget(newEnemy);
             }
         }
@@ -591,7 +611,6 @@ public class Player : MonoBehaviour
             {
                 if (member.squadMemberUID == memberID)
                 {
-                    Debug.Log(member.name);
                     member.DeathScreenFreezeMember();
                 }
             }

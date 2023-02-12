@@ -6,5 +6,13 @@ TODO:
     Will I have a character UI with stats you can upgrade when the character is back at camp?
     Or something else?
 - Add visualisation to damage between party members and enemies
-    Add a message log in the bottom left
+    Add a message log in the bottom left (DONE!)
     Add on-screen floating damage numbers
+- Sound effects
+    Hitting enemies
+    Healing
+    Open/close menu
+    Walking
+- Fix healing not occuring outside combat
+- Add controller input support
+- End-game screen!

@@ -267,15 +267,19 @@ public class Enemy : MonoBehaviour
 
         if (target)
         {
+            float damage = attackDamage * EnemyBaseManager.Instance.GetIncomingDamageMultiplier();
+
             if (target.TryGetComponent(out Player playerScript))
             {
-                playerScript.TakeDamage(attackDamage * EnemyBaseManager.Instance.GetIncomingDamageMultiplier());
+                playerScript.TakeDamage(damage);
+                CombatLogManager.Instance.PrintAttackLog(gameObject.name, false, "Alex", true, damage);
             }
             else if (target.TryGetComponent(out SquadMember squadMemberScript))
             {
-                squadMemberScript.TakeDamage(attackDamage * EnemyBaseManager.Instance.GetIncomingDamageMultiplier());
+                squadMemberScript.TakeDamage(damage);
+                CombatLogManager.Instance.PrintAttackLog(gameObject.name, false, target.name, true, damage);
             }
-            Debug.Log(gameObject.name + " attacks " + target.name + " (-" + attackDamage * EnemyBaseManager.Instance.GetIncomingDamageMultiplier() + ")");
+            CombatParticleVisualiser.Instance.SpawnDamageParticleEffects(target.position + (Vector3.up * 0.5f), damage);
         }
 
         yield return new WaitForSeconds(attackDelay - attackSwingTime);

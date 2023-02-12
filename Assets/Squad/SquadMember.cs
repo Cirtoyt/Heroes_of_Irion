@@ -494,9 +494,18 @@ public class SquadMember : MonoBehaviour
                     yield return new WaitForSeconds(swordsmanSwingTillHitTime);
                     if (closestEnemyFound)
                     {
-                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(swordsmanAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
-                        Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                                  + " (-" + swordsmanAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
+                        float damage = swordsmanAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier();
+                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(damage);
+                        CombatLogManager.Instance.PrintAttackLog(gameObject.name, true, closestEnemyFound.gameObject.name, false, damage);
+
+                        float heightHitOffset = 0.5f;
+                        float scaleOffset = 0.5f;
+                        if (closestEnemyFound.GetComponent<Enemy>().GetEnemyType() == Enemy.EnemyType.LARGE)
+                        {
+                            heightHitOffset = 1f;
+                            scaleOffset = 1f;
+                        }
+                        CombatParticleVisualiser.Instance.SpawnDamageParticleEffects(closestEnemyFound.position + (Vector3.up * heightHitOffset), damage, scaleOffset);
                     }
 
                     yield return new WaitForSeconds(swordsmanAttackDelay - swordsmanSwingTillHitTime);
@@ -509,9 +518,18 @@ public class SquadMember : MonoBehaviour
                     yield return new WaitForSeconds(tankSwingTillHitTime);
                     if (closestEnemyFound)
                     {
-                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(tankAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
-                        Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                                  + " (-" + tankAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
+                        float damage = tankAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier();
+                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(damage);
+                        CombatLogManager.Instance.PrintAttackLog(gameObject.name, true, closestEnemyFound.gameObject.name, false, damage);
+
+                        float heightHitOffset = 0.5f;
+                        float scaleOffset = 0.5f;
+                        if (closestEnemyFound.GetComponent<Enemy>().GetEnemyType() == Enemy.EnemyType.LARGE)
+                        {
+                            heightHitOffset = 1f;
+                            scaleOffset = 1f;
+                        }
+                        CombatParticleVisualiser.Instance.SpawnDamageParticleEffects(closestEnemyFound.position + (Vector3.up * heightHitOffset), damage, scaleOffset);
                     }
                     yield return new WaitForSeconds(tankAttackDelay - tankSwingTillHitTime);
                     break;
@@ -523,9 +541,18 @@ public class SquadMember : MonoBehaviour
                     yield return new WaitForSeconds(archerAttackAirTime);
                     if (closestEnemyFound)
                     {
-                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(archerAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
-                        Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                                  + " (-" + archerAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
+                        float damage = archerAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier();
+                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(damage);
+                        CombatLogManager.Instance.PrintAttackLog(gameObject.name, true, closestEnemyFound.gameObject.name, false, damage);
+
+                        float heightHitOffset = 0.5f;
+                        float scaleOffset = 0.5f;
+                        if (closestEnemyFound.GetComponent<Enemy>().GetEnemyType() == Enemy.EnemyType.LARGE)
+                        {
+                            heightHitOffset = 1f;
+                            scaleOffset = 1f;
+                        }
+                        CombatParticleVisualiser.Instance.SpawnDamageParticleEffects(closestEnemyFound.position + (Vector3.up * heightHitOffset), damage, scaleOffset);
                     }
                     yield return new WaitForSeconds(archerAttackDelay - archerAttackAirTime);
                     break;
@@ -546,9 +573,18 @@ public class SquadMember : MonoBehaviour
                     yield return new WaitForSeconds(rogueSwingTillHitTime);
                     if (closestEnemyFound)
                     {
-                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(rogueAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier());
-                        Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                                  + " (-" + rogueAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier() + ")");
+                        float damage = rogueAttackDamage * EnemyBaseManager.Instance.GetBladeDamageMultiplier();
+                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(damage);
+                        CombatLogManager.Instance.PrintAttackLog(gameObject.name, true, closestEnemyFound.gameObject.name, false, damage);
+
+                        float heightHitOffset = 0.5f;
+                        float scaleOffset = 0.5f;
+                        if (closestEnemyFound.GetComponent<Enemy>().GetEnemyType() == Enemy.EnemyType.LARGE)
+                        {
+                            heightHitOffset = 1f;
+                            scaleOffset = 1f;
+                        }
+                        CombatParticleVisualiser.Instance.SpawnDamageParticleEffects(closestEnemyFound.position + (Vector3.up * heightHitOffset), damage, scaleOffset);
                     }
                     yield return new WaitForSeconds(rogueAttackDelay - rogueSwingTillHitTime);
                     break;
@@ -559,12 +595,21 @@ public class SquadMember : MonoBehaviour
                     //play animation
                     yield return new WaitForSeconds(sorcererAttackAirTime);
                     anim.SetTrigger("Attack2");
-                    closestEnemyFound.TryGetComponent<Enemy>(out Enemy enemyComponent);
+                    closestEnemyFound.TryGetComponent(out Enemy enemyComponent);
                     if (closestEnemyFound)
                     {
-                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(sorcererAttackDamage * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
-                        Debug.Log(gameObject.name + " attacks " + closestEnemyFound.gameObject.name
-                                  + " (-" + sorcererAttackDamage * EnemyBaseManager.Instance.GetMagicDamageMultiplier() + ")");
+                        float damage = sorcererAttackDamage * EnemyBaseManager.Instance.GetMagicDamageMultiplier();
+                        closestEnemyFound.GetComponent<Enemy>().TakeDamage(damage);
+                        CombatLogManager.Instance.PrintAttackLog(gameObject.name, true, closestEnemyFound.gameObject.name, false, damage);
+
+                        float heightHitOffset = 0.5f;
+                        float scaleOffset = 0.5f;
+                        if (closestEnemyFound.GetComponent<Enemy>().GetEnemyType() == Enemy.EnemyType.LARGE)
+                        {
+                            heightHitOffset = 1f;
+                            scaleOffset = 1f;
+                        }
+                        CombatParticleVisualiser.Instance.SpawnDamageParticleEffects(closestEnemyFound.position + (Vector3.up * heightHitOffset), damage, scaleOffset);
                     }
                     yield return new WaitForSeconds(sorcererAttackDelay - sorcererAttackAirTime);
                     break;
@@ -602,8 +647,8 @@ public class SquadMember : MonoBehaviour
                         playerScript.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
 
                         float healingDone = weakestSM.GetHealth() - oldHealth;
-                        Debug.Log(gameObject.name + " heals " + player.name +
-                                  " (+" + healingDone + ")");
+                        CombatLogManager.Instance.PrintHealLog(gameObject.name, true, "Alex", true, healingDone);
+                        CombatParticleVisualiser.Instance.SpawnHealingParticleEffects(playerScript.transform.position + (Vector3.up * 0.5f), healingDone);
                     }
                     else if (weakestSM.GetHealth() < weakestSM.GetMaxHealth())
                     {
@@ -619,8 +664,8 @@ public class SquadMember : MonoBehaviour
                             weakestSM.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
 
                             float healingDone = weakestSM.GetHealth() - oldHealth;
-                            Debug.Log(gameObject.name + " heals " + weakestSM.gameObject.name +
-                                      " (+" + healingDone + ")");
+                            CombatLogManager.Instance.PrintHealLog(gameObject.name, true, weakestSM.gameObject.name, true, healingDone);
+                            CombatParticleVisualiser.Instance.SpawnHealingParticleEffects(weakestSM.transform.position + (Vector3.up * 0.5f), healingDone);
                         }
                     }
                     yield return new WaitForSeconds(healerHealDelay - healerHealAirTime);
@@ -665,7 +710,7 @@ public class SquadMember : MonoBehaviour
             regrouping = true;
             closestEnemyFound = null;
 
-            Debug.Log(name + " is now regrouping");
+            CombatLogManager.Instance.PrintRegroupLog(name);
         }
     }
     public void ChangeAttackTarget(Transform newTarget)

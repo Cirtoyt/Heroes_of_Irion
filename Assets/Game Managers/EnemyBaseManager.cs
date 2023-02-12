@@ -44,6 +44,8 @@ public class EnemyBaseManager : MonoBehaviour
     [SerializeField] private float incomingDamageMultiplier;
     [SerializeField] private float movementSpeedMultiplier;
 
+    private ObjectivesMenuHandler objectivesMenuHandler;
+
     private enum Reward
     {
         Kate,
@@ -56,6 +58,8 @@ public class EnemyBaseManager : MonoBehaviour
 
     void Start()
     {
+        objectivesMenuHandler = FindObjectOfType<ObjectivesMenuHandler>();
+
         // loop through all enemies and check their baseID to set total requirements
         object[] enemies = FindObjectsOfType(typeof(Enemy));
         foreach (object obj in enemies)
@@ -118,6 +122,9 @@ public class EnemyBaseManager : MonoBehaviour
                     upgradeSlots[slot].text = currentUpgrades[slot].ToString();
                 }
             }
+
+            // Open objectives UI
+            objectivesMenuHandler.OpenObjectives();
         }
 
         // check for end-game state where all bases are defeated
@@ -134,6 +141,7 @@ public class EnemyBaseManager : MonoBehaviour
         {
             // End game
             Debug.Log("Game has been completed!");
+            objectivesMenuHandler.HideObjectives();
         }
     }
 
