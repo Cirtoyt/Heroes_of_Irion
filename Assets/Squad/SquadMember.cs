@@ -26,7 +26,9 @@ public class SquadMember : MonoBehaviour
     }
 
     public int squadMemberUID;
-    public Classes squadMemberClass;
+    [HideInInspector] public Classes currentSquadMemberClass;
+    [SerializeField] private Classes primarySquadMemberClass;
+    [SerializeField] private Classes secondarySquadMemberClass;
 
     [SerializeField] private States state;
     [SerializeField] private float maxHealth;
@@ -42,8 +44,11 @@ public class SquadMember : MonoBehaviour
     [SerializeField] private Transform spawnPoint;
     [SerializeField] private SpawnGhost spawnGhostScript;
     [SerializeField] private bool showDubugGizmos;
+    [SerializeField] private List<GameObject> primaryWeapons = new List<GameObject>();
+    [SerializeField] private List<GameObject> secondaryWeapons = new List<GameObject>();
     [SerializeField] private Transform staffTip;
     [SerializeField] private HealingSpellEffect healingSpellEffectPrefab;
+    [SerializeField] private HealingSpellEffect damagingSpellEffectPrefab;
 
     private Rigidbody rb;
     private GameObject characterModel;
@@ -75,7 +80,7 @@ public class SquadMember : MonoBehaviour
     private float sorcererAttackDamage = 6f;
     private float sorcererCastSpeed = 0.8f;
     private float sorcererAttackDelay = 3.1f;
-    private float sorcererAttackAirTime = 1.3f;
+    private float sorcererAttackAirTime = 1.1f;
     private float healerHealAmount = 15f;
     private float healerCastSpeed = 0.8f;
     private float healerHealDelay = 3.9f;
@@ -84,6 +89,7 @@ public class SquadMember : MonoBehaviour
     private Vector3 followPoint;
     private bool isFollowing;
     private int partyPosition;
+    [Header("Debug")]
     [SerializeField] private Transform closestEnemyFound;
     private Vector3 engagePos;
     [SerializeField] private bool canAttack;
@@ -93,6 +99,7 @@ public class SquadMember : MonoBehaviour
     private int lastAttack;
     private bool regrouping;
     private bool prioritiseLargeEnemies = false;
+    private bool isUsingPrimaryClass = true;
 
     void Awake()
     {
@@ -116,6 +123,9 @@ public class SquadMember : MonoBehaviour
         lastAttack = 0;
         regrouping = false;
 
+        currentSquadMemberClass = primarySquadMemberClass;
+        ToggleWeaponVisibility(isPrimaryWeapon: true, true);
+        ToggleWeaponVisibility(isPrimaryWeapon: false, false);
 
         UpdatePartyPositionVar();
         agent.enabled = false;
@@ -343,7 +353,7 @@ public class SquadMember : MonoBehaviour
 
     private Vector3 GetCombatPosition()
     {
-        switch (squadMemberClass)
+        switch (currentSquadMemberClass)
         {
             case Classes.Tank:
             case Classes.Swordsman:
@@ -494,7 +504,7 @@ public class SquadMember : MonoBehaviour
 
     private IEnumerator Attack()
     {
-        switch (squadMemberClass)
+        switch (currentSquadMemberClass)
         {
             case Classes.Swordsman:
                 {
@@ -600,16 +610,30 @@ public class SquadMember : MonoBehaviour
                 }
             case Classes.Sorcerer:
                 {
-                    anim.SetFloat("AttackSpeed", sorcererCastSpeed);
-                    //play animation
-                    yield return new WaitForSeconds(sorcererAttackAirTime);
-                    anim.SetTrigger("Attack2");
-                    closestEnemyFound.TryGetComponent(out Enemy enemyComponent);
+                    if (closestEnemyFound)
+                    {
+                        anim.SetFloat("AttackSpeed", sorcererCastSpeed);
+                        anim.SetTrigger("Attack3");
+
+                        float heightHitOffset = 0.5f;
+                        if (closestEnemyFound.GetComponent<Enemy>().GetEnemyType() == Enemy.EnemyType.LARGE)
+                        {
+                            heightHitOffset = 1f;
+                        }
+
+                        HealingSpellEffect damagingSpellEffect = Instantiate(damagingSpellEffectPrefab, staffTip.position, Quaternion.identity);
+                        damagingSpellEffect.name = damagingSpellEffectPrefab.name;
+                        damagingSpellEffect.target = closestEnemyFound;
+                        damagingSpellEffect.flySpeed = (Vector3.Distance(staffTip.position, closestEnemyFound.position + (Vector3.up * heightHitOffset)) / healerHealAirTime) * 1.1f;
+                    }
+
+                    yield return new WaitForSeconds(healerHealAirTime);
+
                     if (closestEnemyFound)
                     {
                         float damage = sorcererAttackDamage * EnemyBaseManager.Instance.GetMagicDamageMultiplier();
                         closestEnemyFound.GetComponent<Enemy>().TakeDamage(damage);
-                        CombatLogManager.Instance.PrintAttackLog(gameObject.name, true, closestEnemyFound.gameObject.name, false, damage);
+                        CombatLogManager.Instance.PrintAttackLog(gameObject.name, true, closestEnemyFound.name, false, damage);
 
                         float heightHitOffset = 0.5f;
                         float scaleOffset = 0.5f;
@@ -632,7 +656,7 @@ public class SquadMember : MonoBehaviour
 
     private void ProcessHealerClass()
     {
-        if (squadMemberClass == Classes.Healer)
+        if (currentSquadMemberClass == Classes.Healer)
         {
             if (canAttack)
             {
@@ -703,7 +727,7 @@ public class SquadMember : MonoBehaviour
                 weakestSM.HealHealth(healerHealAmount * EnemyBaseManager.Instance.GetMagicDamageMultiplier());
 
                 float healingDone = weakestSM.GetHealth() - oldHealth;
-                CombatLogManager.Instance.PrintHealLog(gameObject.name, true, weakestSM.gameObject.name, true, healingDone);
+                CombatLogManager.Instance.PrintHealLog(gameObject.name, true, weakestSM.gameObject.name, false, healingDone);
                 CombatParticleVisualiser.Instance.SpawnHealingParticleEffects(weakestSM.transform.position + (Vector3.up * 0.5f), healingDone);
             }
         }
@@ -857,9 +881,50 @@ public class SquadMember : MonoBehaviour
         prioritiseLargeEnemies = !prioritiseLargeEnemies;
     }
 
-    public bool GetIsPrioritisingLargeEnememies()
+    public bool GetIsPrioritisingLargeEnemies()
     {
         return prioritiseLargeEnemies;
+    }
+
+    public void ToggleClass()
+    {
+        if (isUsingPrimaryClass)
+        {
+            currentSquadMemberClass = secondarySquadMemberClass;
+            ToggleWeaponVisibility(isPrimaryWeapon: false, true);
+            ToggleWeaponVisibility(isPrimaryWeapon: true, false);
+        }
+        else
+        {
+            currentSquadMemberClass = primarySquadMemberClass;
+            ToggleWeaponVisibility(isPrimaryWeapon: true, true);
+            ToggleWeaponVisibility(isPrimaryWeapon: false, false);
+        }
+
+        isUsingPrimaryClass = !isUsingPrimaryClass;
+    }
+
+    public bool GetIsUsingPrimaryClass()
+    {
+        return isUsingPrimaryClass;
+    }
+
+    private void ToggleWeaponVisibility(bool isPrimaryWeapon, bool newState)
+    {
+        if (isPrimaryWeapon)
+        {
+            foreach (GameObject weapon in primaryWeapons)
+            {
+                weapon.SetActive(newState);
+            }
+        }
+        else
+        {
+            foreach (GameObject weapon in secondaryWeapons)
+            {
+                weapon.SetActive(newState);
+            }
+        }
     }
 
     private void DrawCircle(Vector3 center, float radius, Color color)

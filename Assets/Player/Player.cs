@@ -305,9 +305,14 @@ public class Player : MonoBehaviour
                             partyHUD.RemoveAllHUDHighlights();
                         }
                         break;
-                    case Actions.STATS:
+                    case Actions.SWITCHCLASS:
                         {
-                            Debug.Log("Character stats is currently not implemented");
+                            foreach (int partyPos in actionMenu.selectedPartyMembers)
+                            {
+                                SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(partyPos);
+                                member.ToggleClass();
+                            }
+
                             // Remove selected party positions/members after action is none
                             actionMenu.selectedPartyMembers.Clear();
                             partyHUD.RemoveAllHUDHighlights();

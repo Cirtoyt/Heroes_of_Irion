@@ -109,7 +109,7 @@ public class ActionMenu : MonoBehaviour
             foreach (int partyPos in selectedPartyMembers)
             {
                 SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(partyPos);
-                if (member.squadMemberClass == SquadMember.Classes.Healer)
+                if (member.currentSquadMemberClass == SquadMember.Classes.Healer)
                     anyMembersAreHealers = true;
             }
 
@@ -163,8 +163,21 @@ public class ActionMenu : MonoBehaviour
                         else if (selectedPartyMembers.Count == 1)
                         {
                             SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(selectedPartyMembers[0]);
-                            optionScript.ToggleIcon(member.GetIsPrioritisingLargeEnememies());
+                            optionScript.ToggleIcon(member.GetIsPrioritisingLargeEnemies());
                         }
+                    }
+                }
+                else if (optionScript.GetActionType() == Actions.SWITCHCLASS)
+                {
+                    optionScript.UnDim();
+                    if (selectedPartyMembers.Count > 1)
+                    {
+                        optionScript.ForceToggleIconsUndim();
+                    }
+                    else if (selectedPartyMembers.Count == 1)
+                    {
+                        SquadMember member = partyMngr.GetSquadMemberFromPositionInParty(selectedPartyMembers[0]);
+                        optionScript.ToggleIcon(member.GetIsUsingPrimaryClass());
                     }
                 }
                 else

@@ -48,7 +48,7 @@ public class PartyHUD : MonoBehaviour
 
             // Set text
             Text nameplate = partyMemberHUDS[partyPosition].transform.Find("Nameplate Text").GetComponent<Text>();
-            nameplate.text = member.gameObject.name + " The " + member.squadMemberClass.ToString();
+            nameplate.text = member.gameObject.name + " The " + member.currentSquadMemberClass.ToString();
 
             // Set health bar
             SetHealthBar(partyPosition, member.GetHealth(), member.GetMaxHealth());

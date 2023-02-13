@@ -1,17 +1,15 @@
 TODO:
-- Decide what to do with character stats party member action
-    Or something else?
-      Swap class system (2 classes per character and swapping of weapons visible)?
-- Fix issue where squad member gets stuck running and pushed around by enemies!
-- Add death animation on death?
-- End-game screen!
-
-Bonus stuff:
 - Sound effects
     Hitting enemies
     Healing
     Open/close menu
     Walking
+- End-game screen!
+- Add death animation on death?
+- Fix issue where squad member gets stuck running and then get pushed around by enemies?
+- Fix issue where calling for regroup twice? removes running animation?
+
+Bonus stuff:
 - Character upgrading station (in camp, anvil or something)
     Character UI with stats you can upgrade when the character is back at camp
       Stats that could be upgraded:

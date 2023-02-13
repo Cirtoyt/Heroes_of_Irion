@@ -9,7 +9,7 @@ public enum Actions
     REMOVEFROMPARTY,
     PRIORITISELARGEENEMIES,
     REGROUP,
-    STATS,
+    SWITCHCLASS,
     NONE,
 }
 
